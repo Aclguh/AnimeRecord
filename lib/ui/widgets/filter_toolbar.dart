@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../models/app_constants.dart';
 
-/// 顶部工具栏（状态筛选 Tab、搜索框、排序下拉、添加番剧按钮）
+/// 顶部工具栏（状态筛选 Tab、带防抖的搜索框、排序下拉、响应式自适应添加番剧按钮）
 class FilterToolbar extends StatefulWidget {
   final String activeStatus;
   final Map<String, int> statusCounts;
@@ -30,6 +31,7 @@ class FilterToolbar extends StatefulWidget {
 
 class _FilterToolbarState extends State<FilterToolbar> {
   late TextEditingController _searchController;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -48,8 +50,17 @@ class _FilterToolbarState extends State<FilterToolbar> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onInputChanged(String val) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 250), () {
+      widget.onSearchChanged(val);
+    });
+    setState(() {});
   }
 
   @override
@@ -68,12 +79,13 @@ class _FilterToolbarState extends State<FilterToolbar> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isWide = constraints.maxWidth >= 900;
+        final isWide = constraints.maxWidth >= 920;
+        final isMedium = constraints.maxWidth >= 600;
 
         final statusTabs = Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF171A22) : const Color(0xFFEFEFF4),
+            color: isDark ? const Color(0xFF27272A) : const Color(0xFFE4E4E7),
             borderRadius: BorderRadius.circular(12),
           ),
           child: SingleChildScrollView(
@@ -97,7 +109,7 @@ class _FilterToolbarState extends State<FilterToolbar> {
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? (isDark ? const Color(0xFF262B37) : Colors.white)
+                            ? (isDark ? const Color(0xFF3F3F46) : Colors.white)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(9),
                         boxShadow: isSelected
@@ -119,8 +131,8 @@ class _FilterToolbarState extends State<FilterToolbar> {
                               fontSize: 13,
                               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                               color: isSelected
-                                  ? (isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430))
-                                  : (isDark ? const Color(0xFFA8B0C0) : const Color(0xFF59617A)),
+                                  ? (isDark ? const Color(0xFFF4F4F5) : const Color(0xFF18181B))
+                                  : (isDark ? const Color(0xFFA1A1AA) : const Color(0xFF52525B)),
                             ),
                           ),
                           if (count != null && count > 0) ...[
@@ -136,7 +148,7 @@ class _FilterToolbarState extends State<FilterToolbar> {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
-                                  color: isDark ? const Color(0xFFA8B0C0) : const Color(0xFF59617A),
+                                  color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF52525B),
                                 ),
                               ),
                             ),
@@ -156,23 +168,24 @@ class _FilterToolbarState extends State<FilterToolbar> {
           height: 40,
           child: TextField(
             controller: _searchController,
-            onChanged: widget.onSearchChanged,
+            onChanged: _onInputChanged,
             style: const TextStyle(fontSize: 13.5),
             decoration: InputDecoration(
               hintText: '搜索番剧...',
               hintStyle: TextStyle(
                 fontSize: 13,
-                color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
+                color: isDark ? const Color(0xFF71717A) : const Color(0xFFA1A1AA),
               ),
               prefixIcon: Icon(
                 Icons.search_rounded,
                 size: 18,
-                color: isDark ? const Color(0xFFA8B0C0) : const Color(0xFF98A0B3),
+                color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
               ),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
                       icon: const Icon(Icons.close_rounded, size: 16),
                       onPressed: () {
+                        _debounceTimer?.cancel();
                         _searchController.clear();
                         widget.onSearchChanged('');
                         setState(() {});
@@ -188,10 +201,10 @@ class _FilterToolbarState extends State<FilterToolbar> {
           height: 40,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1C2029) : const Color(0xFFFBFBFD),
+            color: isDark ? const Color(0xFF27272A) : const Color(0xFFFAFAF9),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: isDark ? const Color(0xFF262B37) : const Color(0xFFE9EAF0),
+              color: isDark ? const Color(0xFF3F3F46) : const Color(0xFFE4E4E7),
             ),
           ),
           child: DropdownButtonHideUnderline(
@@ -201,9 +214,9 @@ class _FilterToolbarState extends State<FilterToolbar> {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430),
+                color: isDark ? const Color(0xFFF4F4F5) : const Color(0xFF18181B),
               ),
-              dropdownColor: isDark ? const Color(0xFF171A22) : Colors.white,
+              dropdownColor: isDark ? const Color(0xFF27272A) : Colors.white,
               borderRadius: BorderRadius.circular(12),
               items: SortOption.labels.entries.map((e) {
                 return DropdownMenuItem(
@@ -241,7 +254,7 @@ class _FilterToolbarState extends State<FilterToolbar> {
               addBtn,
             ],
           );
-        } else {
+        } else if (isMedium) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -253,6 +266,24 @@ class _FilterToolbarState extends State<FilterToolbar> {
                   const SizedBox(width: 8),
                   sortDropdown,
                   const SizedBox(width: 8),
+                  addBtn,
+                ],
+              ),
+            ],
+          );
+        } else {
+          // 移动端小屏断点（< 600dp）：分行排版，彻底避免 RenderFlex overflow
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              statusTabs,
+              const SizedBox(height: 10),
+              searchBox,
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(child: sortDropdown),
+                  const SizedBox(width: 10),
                   addBtn,
                 ],
               ),

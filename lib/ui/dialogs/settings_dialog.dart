@@ -578,32 +578,60 @@ class _SettingsDialogState extends State<SettingsDialog> {
                         ],
                       ),
                       const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _handleExportData,
-                              icon: const Icon(Icons.file_upload_outlined, size: 16),
-                              label: const Text('导出数据'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _handleImportData,
-                              icon: const Icon(Icons.file_download_outlined, size: 16),
-                              label: const Text('导入数据'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _handleExportTemplate,
-                              icon: const Icon(Icons.description_outlined, size: 16),
-                              label: const Text('下载模板'),
-                            ),
-                          ),
-                        ],
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          if (constraints.maxWidth < 420) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                OutlinedButton.icon(
+                                  onPressed: _handleExportData,
+                                  icon: const Icon(Icons.file_upload_outlined, size: 16),
+                                  label: const Text('导出数据'),
+                                ),
+                                const SizedBox(height: 8),
+                                OutlinedButton.icon(
+                                  onPressed: _handleImportData,
+                                  icon: const Icon(Icons.file_download_outlined, size: 16),
+                                  label: const Text('导入数据'),
+                                ),
+                                const SizedBox(height: 8),
+                                OutlinedButton.icon(
+                                  onPressed: _handleExportTemplate,
+                                  icon: const Icon(Icons.description_outlined, size: 16),
+                                  label: const Text('下载模板'),
+                                ),
+                              ],
+                            );
+                          }
+                          return Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: _handleExportData,
+                                  icon: const Icon(Icons.file_upload_outlined, size: 16),
+                                  label: const Text('导出数据'),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: _handleImportData,
+                                  icon: const Icon(Icons.file_download_outlined, size: 16),
+                                  label: const Text('导入数据'),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: _handleExportTemplate,
+                                  icon: const Icon(Icons.description_outlined, size: 16),
+                                  label: const Text('下载模板'),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                       const SizedBox(height: 6),
                       Text(

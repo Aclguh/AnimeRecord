@@ -15,7 +15,7 @@ import '../widgets/stats_bar.dart';
 import '../widgets/toast_overlay.dart';
 import '../widgets/week_filter_bar.dart';
 
-/// 主页界面
+/// 主页界面（采用 ListenableBuilder 细粒度局部重绘隔离、支持下拉刷新与响应式网格布局）
 class HomeScreen extends StatefulWidget {
   final AnimeProvider animeProvider;
   final ThemeProvider themeProvider;
@@ -34,20 +34,9 @@ class _HomeScreenState extends State<HomeScreen> {
   final FocusNode _searchFocusNode = FocusNode();
 
   @override
-  void initState() {
-    super.initState();
-    widget.animeProvider.addListener(_onProviderUpdate);
-  }
-
-  @override
   void dispose() {
-    widget.animeProvider.removeListener(_onProviderUpdate);
     _searchFocusNode.dispose();
     super.dispose();
-  }
-
-  void _onProviderUpdate() {
-    if (mounted) setState(() {});
   }
 
   void _openAddDialog() {
@@ -127,10 +116,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = widget.animeProvider;
-
-    final isDefaultSort = provider.sortBy == SortOption.defaultSort;
-
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.keyN, control: true): _openAddDialog,
@@ -143,60 +128,72 @@ class _HomeScreenState extends State<HomeScreen> {
           body: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1240),
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                physics: const BouncingScrollPhysics(),
-                children: [
-                  // 1. 统计概览栏
-                  StatsBar(
-                    totalRecords: provider.totalRecordsCount,
-                    totalEpisodesWatched: provider.totalEpisodesWatched,
-                    statusCounts: provider.statusCounts,
-                  ),
-                  const SizedBox(height: 16),
+              child: RefreshIndicator(
+                onRefresh: _handleSync,
+                color: Theme.of(context).colorScheme.primary,
+                child: ListenableBuilder(
+                  listenable: widget.animeProvider,
+                  builder: (context, _) {
+                    final provider = widget.animeProvider;
+                    final isDefaultSort = provider.sortBy == SortOption.defaultSort;
 
-                  // 2. 工具栏 (状态 Tab, 搜索框, 排序下拉, 添加按钮)
-                  FilterToolbar(
-                    activeStatus: provider.activeStatus,
-                    statusCounts: provider.statusCounts,
-                    searchQuery: provider.searchQuery,
-                    sortBy: provider.sortBy,
-                    onSelectStatus: provider.setStatusFilter,
-                    onSearchChanged: provider.setSearchQuery,
-                    onSortChanged: provider.setSortBy,
-                    onAddAnime: _openAddDialog,
-                  ),
-
-                  // 3. 更新日筛选
-                  WeekFilterBar(
-                    activeWeek: provider.activeWeek,
-                    weekCounts: provider.activeWeekCounts,
-                    onSelectWeek: provider.setWeekFilter,
-                  ),
-                  const SizedBox(height: 18),
-
-                  // 4. 番剧卡片网格列表 / 空状态
-                  if (provider.pagedRecords.isEmpty)
-                    _buildEmptyState(context)
-                  else
-                    _buildCardsGrid(context, isDefaultSort),
-
-                  // 5. 加载更多
-                  if (provider.hasMore) ...[
-                    const SizedBox(height: 24),
-                    Center(
-                      child: OutlinedButton(
-                        onPressed: provider.loadMore,
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    return ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                      children: [
+                        // 1. 统计概览栏
+                        StatsBar(
+                          totalRecords: provider.totalRecordsCount,
+                          totalEpisodesWatched: provider.totalEpisodesWatched,
+                          statusCounts: provider.statusCounts,
                         ),
-                        child: const Text('加载更多'),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 36),
-                ],
+                        const SizedBox(height: 14),
+
+                        // 2. 工具栏 (状态 Tab, 搜索框, 排序下拉, 添加按钮)
+                        FilterToolbar(
+                          activeStatus: provider.activeStatus,
+                          statusCounts: provider.statusCounts,
+                          searchQuery: provider.searchQuery,
+                          sortBy: provider.sortBy,
+                          onSelectStatus: provider.setStatusFilter,
+                          onSearchChanged: provider.setSearchQuery,
+                          onSortChanged: provider.setSortBy,
+                          onAddAnime: _openAddDialog,
+                        ),
+
+                        // 3. 更新日筛选
+                        WeekFilterBar(
+                          activeWeek: provider.activeWeek,
+                          weekCounts: provider.activeWeekCounts,
+                          onSelectWeek: provider.setWeekFilter,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // 4. 番剧卡片网格列表 / 空状态
+                        if (provider.pagedRecords.isEmpty)
+                          _buildEmptyState(context)
+                        else
+                          _buildCardsGrid(context, provider, isDefaultSort),
+
+                        // 5. 加载更多
+                        if (provider.hasMore) ...[
+                          const SizedBox(height: 24),
+                          Center(
+                            child: OutlinedButton(
+                              onPressed: provider.loadMore,
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              child: const Text('加载更多'),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 36),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -208,10 +205,9 @@ class _HomeScreenState extends State<HomeScreen> {
   PreferredSizeWidget _buildHeader(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final provider = widget.animeProvider;
 
     return AppBar(
-      titleSpacing: 20,
+      titleSpacing: 16,
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -220,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 32,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFFF78CA0), Color(0xFFE6456A)],
+                colors: [Color(0xFFEC5F7A), Color(0xFFFF7E95)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -238,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430),
+              color: isDark ? const Color(0xFFF4F4F5) : const Color(0xFF18181B),
               letterSpacing: 0.3,
             ),
           ),
@@ -246,21 +242,27 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       actions: [
         // 云端同步按钮
-        OutlinedButton.icon(
-          onPressed: provider.isSyncing ? null : _handleSync,
-          icon: provider.isSyncing
-              ? const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.sync_rounded, size: 16),
-          label: const Text('同步'),
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
+        ListenableBuilder(
+          listenable: widget.animeProvider,
+          builder: (context, _) {
+            final isSyncing = widget.animeProvider.isSyncing;
+            return OutlinedButton.icon(
+              onPressed: isSyncing ? null : _handleSync,
+              icon: isSyncing
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.sync_rounded, size: 16),
+              label: const Text('同步'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            );
+          },
         ),
         const SizedBox(width: 8),
 
@@ -281,7 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
           tooltip: '打开设置',
           icon: const Icon(Icons.settings_outlined, size: 20),
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: 12),
       ],
     );
   }
@@ -301,13 +303,13 @@ class _HomeScreenState extends State<HomeScreen> {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1C2029) : const Color(0xFFF1F5F9),
+              color: isDark ? const Color(0xFF27272A) : const Color(0xFFF4F4F5),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.movie_filter_outlined,
               size: 36,
-              color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
+              color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
             ),
           ),
           const SizedBox(height: 18),
@@ -316,7 +318,7 @@ class _HomeScreenState extends State<HomeScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430),
+              color: isDark ? const Color(0xFFF4F4F5) : const Color(0xFF18181B),
             ),
           ),
           const SizedBox(height: 8),
@@ -326,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 : '没有找到符合条件的番剧，试试调整筛选条件吧！',
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
+              color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
             ),
           ),
           if (isTotalEmpty) ...[
@@ -345,33 +347,33 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCardsGrid(BuildContext context, bool isDefaultSort) {
-    final records = widget.animeProvider.pagedRecords;
+  Widget _buildCardsGrid(BuildContext context, AnimeProvider provider, bool isDefaultSort) {
+    final records = provider.pagedRecords;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         int crossAxisCount = 1;
         if (constraints.maxWidth >= 1050) {
           crossAxisCount = 3;
-        } else if (constraints.maxWidth >= 680) {
+        } else if (constraints.maxWidth >= 660) {
           crossAxisCount = 2;
         }
 
-        final double itemWidth = (constraints.maxWidth - (crossAxisCount - 1) * 16) / crossAxisCount;
+        final double itemWidth = (constraints.maxWidth - (crossAxisCount - 1) * 14) / crossAxisCount;
 
-        // 如果在默认排序模式下，支持拖拽排序！
+        // 如果在默认排序模式下，支持拖拽排序
         if (isDefaultSort) {
           return ReorderableWrap(
-            spacing: 16,
-            runSpacing: 16,
+            spacing: 14,
+            runSpacing: 14,
             onReorder: (oldIndex, newIndex) {
-              widget.animeProvider.reorder(oldIndex, newIndex);
+              provider.reorder(oldIndex, newIndex);
             },
             children: records.map((record) {
               return SizedBox(
                 key: ValueKey(record.id),
                 width: itemWidth,
-                height: 196,
+                height: 204,
                 child: AnimeCard(
                   record: record,
                   onEdit: () => _openEditDialog(record),
@@ -385,13 +387,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // 普通布局展示
         return Wrap(
-          spacing: 16,
-          runSpacing: 16,
+          spacing: 14,
+          runSpacing: 14,
           children: records.map((record) {
             return SizedBox(
               key: ValueKey(record.id),
               width: itemWidth,
-              height: 196,
+              height: 204,
               child: AnimeCard(
                 record: record,
                 onEdit: () => _openEditDialog(record),

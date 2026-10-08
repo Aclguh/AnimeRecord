@@ -19,11 +19,11 @@ class StatsBar extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final borderColor = isDark ? const Color(0xFF262B37) : const Color(0xFFE9EAF0);
-    final cardBg = isDark ? const Color(0xFF171A22) : const Color(0xFFFFFFFF);
-    final pillBg = isDark ? const Color(0xFF232733) : const Color(0xFFF1F5F9);
-    final pillText = isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430);
-    final labelColor = isDark ? const Color(0xFFA8B0C0) : const Color(0xFF59617A);
+    final borderColor = isDark ? const Color(0xFF3F3F46) : const Color(0xFFE4E4E7);
+    final cardBg = isDark ? const Color(0xFF27272A) : const Color(0xFFFFFFFF);
+    final pillBg = isDark ? const Color(0xFF323238) : const Color(0xFFF4F4F5);
+    final pillText = isDark ? const Color(0xFFF4F4F5) : const Color(0xFF18181B);
+    final labelColor = isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A);
 
     final statuses = [
       (AnimeStatus.wantToWatch, '想看'),

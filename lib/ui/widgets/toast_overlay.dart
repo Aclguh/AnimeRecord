@@ -2,28 +2,41 @@ import 'package:flutter/material.dart';
 
 enum ToastType { info, success, error, warning }
 
-/// 优雅的 Toast 提示系统
+/// 优雅的 Toast 提示系统（支持安全区自适应、单例防堆叠排队与平滑动画）
 class Toast {
+  static OverlayEntry? _currentEntry;
+
   static void show(
     BuildContext context,
     String message, {
     ToastType type = ToastType.info,
     Duration duration = const Duration(seconds: 3),
   }) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry entry;
+    // 移除已存在的 Toast，避免坐标堆叠遮挡
+    _currentEntry?.remove();
+    _currentEntry = null;
 
+    final overlay = Overlay.maybeOf(context);
+    if (overlay == null) return;
+
+    late OverlayEntry entry;
     entry = OverlayEntry(
-      builder: (context) => _ToastWidget(
+      builder: (ctx) => _ToastWidget(
         message: message,
         type: type,
         duration: duration,
         onDismiss: () {
-          entry.remove();
+          if (_currentEntry == entry) {
+            _currentEntry = null;
+          }
+          if (entry.mounted) {
+            entry.remove();
+          }
         },
       ),
     );
 
+    _currentEntry = entry;
     overlay.insert(entry);
   }
 }
@@ -112,8 +125,8 @@ class _ToastWidgetState extends State<_ToastWidget>
         );
       case ToastType.info:
         return (
-          isDark ? const Color(0xFF1C2029) : const Color(0xFFFFFFFF),
-          isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430),
+          isDark ? const Color(0xFF27272A) : const Color(0xFFFFFFFF),
+          isDark ? const Color(0xFFF4F4F5) : const Color(0xFF18181B),
           Icons.info_outline_rounded,
         );
     }
@@ -123,9 +136,10 @@ class _ToastWidgetState extends State<_ToastWidget>
   Widget build(BuildContext context) {
     final (bg, fg, icon) = _getStyle(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final topPadding = MediaQuery.of(context).padding.top;
 
     return Positioned(
-      top: 36,
+      top: topPadding > 0 ? topPadding + 10 : 36,
       left: 0,
       right: 0,
       child: Center(

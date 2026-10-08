@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/anime_record.dart';
 import '../../models/app_constants.dart';
 import '../widgets/confirm_dialog.dart';
 
-/// 添加 / 编辑番剧模态弹窗
+/// 添加 / 编辑番剧模态弹窗（支持封面输入预览、标签选择、评分调节与键盘安全适配）
 class AnimeFormDialog extends StatefulWidget {
   final AnimeRecord? initialRecord;
   final ValueChanged<AnimeRecord> onSave;
@@ -42,9 +43,11 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
 
   late TextEditingController _titleZhController;
   late TextEditingController _titleJaController;
+  late TextEditingController _coverUrlController;
   late TextEditingController _epWatchedController;
   late TextEditingController _epTotalController;
   late TextEditingController _notesController;
+  late TextEditingController _customTagController;
 
   late String _status;
   late String _week;
@@ -61,6 +64,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
 
     _titleZhController = TextEditingController(text: rec?.titleZh ?? '');
     _titleJaController = TextEditingController(text: rec?.titleJa ?? '');
+    _coverUrlController = TextEditingController(text: rec?.coverUrl ?? '');
     _epWatchedController = TextEditingController(
       text: rec != null ? '${rec.episodesWatched}' : '0',
     );
@@ -68,6 +72,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
       text: rec != null ? '${rec.episodesTotal}' : '0',
     );
     _notesController = TextEditingController(text: rec?.notes ?? '');
+    _customTagController = TextEditingController();
 
     _status = rec?.status ?? AnimeStatus.wantToWatch;
     _week = rec?.week ?? '';
@@ -75,7 +80,12 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
     _rating = rec?.rating ?? 0.0;
     _tags = List.from(rec?.tags ?? []);
 
-    if (rec != null && (rec.titleJa.isNotEmpty || rec.notes.isNotEmpty || rec.tags.isNotEmpty || rec.rating > 0)) {
+    if (rec != null &&
+        (rec.titleJa.isNotEmpty ||
+            rec.coverUrl.isNotEmpty ||
+            rec.notes.isNotEmpty ||
+            rec.tags.isNotEmpty ||
+            rec.rating > 0)) {
       _isAdvancedExpanded = true;
     }
   }
@@ -84,9 +94,11 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
   void dispose() {
     _titleZhController.dispose();
     _titleJaController.dispose();
+    _coverUrlController.dispose();
     _epWatchedController.dispose();
     _epTotalController.dispose();
     _notesController.dispose();
+    _customTagController.dispose();
     super.dispose();
   }
 
@@ -119,6 +131,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
     final newOrUpdated = (widget.initialRecord ?? AnimeRecord.createEmpty()).copyWith(
       titleZh: titleZh,
       titleJa: _titleJaController.text.trim(),
+      coverUrl: _coverUrlController.text.trim(),
       status: currentStatus,
       week: _week,
       airStatus: _airStatus,
@@ -148,6 +161,26 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
     }
   }
 
+  void _toggleTag(String tag) {
+    setState(() {
+      if (_tags.contains(tag)) {
+        _tags.remove(tag);
+      } else {
+        _tags.add(tag);
+      }
+    });
+  }
+
+  void _addCustomTag() {
+    final t = _customTagController.text.trim();
+    if (t.isNotEmpty && !_tags.contains(t)) {
+      setState(() {
+        _tags.add(t);
+        _customTagController.clear();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -155,11 +188,11 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
     final isEditing = widget.initialRecord != null;
 
     return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 540, maxHeight: 720),
+        constraints: const BoxConstraints(maxWidth: 540, maxHeight: 760),
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(22),
           child: Form(
             key: _formKey,
             child: Column(
@@ -185,7 +218,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 // 表单主体内容（可滚动）
                 Flexible(
                   child: SingleChildScrollView(
@@ -197,7 +230,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                         _buildLabel('中文名称', required: true),
                         TextFormField(
                           controller: _titleZhController,
-                          autofocus: true,
+                          autofocus: !isEditing,
                           decoration: const InputDecoration(
                             hintText: '例：葬送的芙莉莲',
                           ),
@@ -208,7 +241,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
                         // 观看状态 & 更新频率
                         Row(
                           children: [
@@ -233,7 +266,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -263,7 +296,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
                         // 播放状态
                         Row(
                           children: [
@@ -294,11 +327,11 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 12),
                             const Expanded(child: SizedBox()),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
                         // 已看集数 & 总集数
                         Row(
                           children: [
@@ -310,12 +343,13 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                                   TextFormField(
                                     controller: _epWatchedController,
                                     keyboardType: TextInputType.number,
+                                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                     decoration: const InputDecoration(hintText: '0'),
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -324,6 +358,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                                   TextFormField(
                                     controller: _epTotalController,
                                     keyboardType: TextInputType.number,
+                                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                                     decoration: const InputDecoration(hintText: '0 (未知)'),
                                   ),
                                 ],
@@ -345,7 +380,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                             child: Row(
                               children: [
                                 Text(
-                                  _isAdvancedExpanded ? '收起更多信息' : '展开更多信息 (日文名、备注、评分等)',
+                                  _isAdvancedExpanded ? '收起更多信息' : '展开更多信息 (封面海报、日文名、标签、评分等)',
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
@@ -365,6 +400,44 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                         ),
                         if (_isAdvancedExpanded) ...[
                           const SizedBox(height: 12),
+                          // 封面海报链接输入与预览
+                          _buildLabel('封面图片链接 (URL)'),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _coverUrlController,
+                                  onChanged: (_) => setState(() {}),
+                                  decoration: const InputDecoration(
+                                    hintText: 'https://example.com/poster.jpg',
+                                  ),
+                                ),
+                              ),
+                              if (_coverUrlController.text.trim().isNotEmpty) ...[
+                                const SizedBox(width: 10),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Container(
+                                    width: 48,
+                                    height: 48,
+                                    color: isDark ? const Color(0xFF1E2025) : const Color(0xFFE4E4E7),
+                                    child: Image.network(
+                                      _coverUrlController.text.trim(),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) => const Icon(
+                                        Icons.broken_image_outlined,
+                                        size: 20,
+                                        color: Color(0xFF71717A),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          // 日文名称
                           _buildLabel('日文名称'),
                           TextFormField(
                             controller: _titleJaController,
@@ -373,6 +446,59 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                             ),
                           ),
                           const SizedBox(height: 14),
+                          // 标签芯片选择器
+                          _buildLabel('标签 (点击选择或添加)'),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              ...kPresetTags.map((tag) {
+                                final isSelected = _tags.contains(tag);
+                                return FilterChip(
+                                  label: Text(tag, style: const TextStyle(fontSize: 12)),
+                                  selected: isSelected,
+                                  onSelected: (_) => _toggleTag(tag),
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                );
+                              }),
+                              ..._tags.where((t) => !kPresetTags.contains(t)).map((customTag) {
+                                return InputChip(
+                                  label: Text(customTag, style: const TextStyle(fontSize: 12)),
+                                  selected: true,
+                                  onDeleted: () => _toggleTag(customTag),
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                );
+                              }),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  height: 38,
+                                  child: TextField(
+                                    controller: _customTagController,
+                                    onSubmitted: (_) => _addCustomTag(),
+                                    decoration: const InputDecoration(
+                                      hintText: '输入自定义标签并按添加',
+                                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              OutlinedButton(
+                                onPressed: _addCustomTag,
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                child: const Text('添加标签'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          // 评分
                           _buildLabel('评分 (0 - 10)'),
                           Row(
                             children: [
@@ -392,12 +518,13 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                                 _rating == 0 ? '未评分' : '$_rating 分',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
-                                  color: isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430),
+                                  color: isDark ? const Color(0xFFF4F4F5) : const Color(0xFF18181B),
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 14),
+                          // 备注
                           _buildLabel('备注 / 评价'),
                           TextFormField(
                             controller: _notesController,
@@ -412,7 +539,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 16),
                 // 底部操作按钮
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -462,7 +589,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430),
+              color: isDark ? const Color(0xFFF4F4F5) : const Color(0xFF18181B),
             ),
           ),
           if (required) ...[

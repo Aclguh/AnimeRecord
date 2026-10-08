@@ -24,7 +24,7 @@ class WeekFilterBar extends StatelessWidget {
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final labelColor = isDark ? const Color(0xFFA8B0C0) : const Color(0xFF59617A);
+    final labelColor = isDark ? const Color(0xFFA1A1AA) : const Color(0xFF52525B);
 
     return Padding(
       padding: const EdgeInsets.only(top: 14),
@@ -99,9 +99,9 @@ class WeekFilterBar extends StatelessWidget {
       fg = customFg ?? Colors.white;
       border = customFg ?? theme.colorScheme.primary;
     } else {
-      bg = isDark ? const Color(0xFF171A22) : const Color(0xFFFFFFFF);
-      fg = isDark ? const Color(0xFFA8B0C0) : const Color(0xFF59617A);
-      border = isDark ? const Color(0xFF262B37) : const Color(0xFFE9EAF0);
+      bg = isDark ? const Color(0xFF27272A) : const Color(0xFFFFFFFF);
+      fg = isDark ? const Color(0xFFA1A1AA) : const Color(0xFF52525B);
+      border = isDark ? const Color(0xFF3F3F46) : const Color(0xFFE4E4E7);
     }
 
     return InkWell(
