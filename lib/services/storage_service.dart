@@ -1,10 +1,11 @@
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/anime_record.dart';
 import '../models/app_constants.dart';
 import '../models/sync_config.dart';
 
-/// 本地数据持久化服务（基于 SharedPreferences，完美适配全平台）
+/// 本地数据持久化服务（普通数据使用 SharedPreferences，敏感凭据使用硬件级 FlutterSecureStorage）
 class StorageService {
   static const String storageKey = 'anime-record-records';
   static const String versionKey = 'anime-record-version';
@@ -20,12 +21,40 @@ class StorageService {
   static const int dataVersion = 1;
 
   final SharedPreferences _prefs;
+  final FlutterSecureStorage _secureStorage;
+  String _cachedToken = '';
 
-  StorageService(this._prefs);
+  StorageService(this._prefs, [FlutterSecureStorage? secureStorage])
+      : _secureStorage = secureStorage ?? const FlutterSecureStorage();
 
-  static Future<StorageService> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    return StorageService(prefs);
+  static Future<StorageService> init({
+    SharedPreferences? prefs,
+    FlutterSecureStorage? secureStorage,
+  }) async {
+    final preferences = prefs ?? await SharedPreferences.getInstance();
+    final secure = secureStorage ?? const FlutterSecureStorage();
+    final service = StorageService(preferences, secure);
+
+    // 1. 从硬件级安全存储读取敏感 GitHub Token
+    try {
+      final token = await secure.read(key: syncTokenKey);
+      if (token != null && token.isNotEmpty) {
+        service._cachedToken = token;
+      } else {
+        // 迁移旧版存在于 SharedPreferences 的明文 token (若有)
+        final legacyToken = preferences.getString(syncTokenKey);
+        if (legacyToken != null && legacyToken.isNotEmpty) {
+          service._cachedToken = legacyToken;
+          await secure.write(key: syncTokenKey, value: legacyToken);
+          await preferences.remove(syncTokenKey);
+        }
+      }
+    } catch (_) {
+      // 在不支持 SecureStorage 的特殊虚拟环境回退到普通缓存
+      service._cachedToken = preferences.getString(syncTokenKey) ?? '';
+    }
+
+    return service;
   }
 
   // ============================================
@@ -52,7 +81,7 @@ class StorageService {
           })
           .whereType<AnimeRecord>()
           .toList();
-    } catch (e) {
+    } catch (_) {
       return [];
     }
   }
@@ -65,12 +94,12 @@ class StorageService {
       await _prefs.setString(storageKey, raw);
       await _prefs.setInt(versionKey, dataVersion);
       return true;
-    } catch (e) {
+    } catch (_) {
       return false;
     }
   }
 
-  /// 添加单条记录
+  /// 添加单条记录（用于兼容独立调用）
   Future<AnimeRecord?> addRecord(AnimeRecord record) async {
     final records = loadRecords();
     final now = DateTime.now().toIso8601String();
@@ -211,7 +240,7 @@ class StorageService {
     if (v != null && (v == 'all' || AnimeStatus.allValues.contains(v))) {
       return v;
     }
-    return AnimeStatus.watching;
+    return AnimeStatus.watchingValue;
   }
 
   Future<void> saveDefaultStatus(String status) async {
@@ -228,12 +257,12 @@ class StorageService {
   }
 
   // ============================================
-  // 同步配置
+  // 云端同步配置（敏感 Token 通过 SecureStorage 安全加密）
   // ============================================
 
   SyncConfig loadSyncConfig() {
     return SyncConfig(
-      token: _prefs.getString(syncTokenKey) ?? '',
+      token: _cachedToken,
       gistId: _prefs.getString(syncGistIdKey) ?? '',
       autoSync: _prefs.getBool(syncAutoKey) ?? false,
       lastSyncTime: _prefs.getString(syncLastTimeKey) ?? '',
@@ -241,7 +270,16 @@ class StorageService {
   }
 
   Future<void> saveSyncConfig(SyncConfig config) async {
-    await _prefs.setString(syncTokenKey, config.token.trim());
+    final token = config.token.trim();
+    _cachedToken = token;
+
+    try {
+      await _secureStorage.write(key: syncTokenKey, value: token);
+    } catch (_) {
+      // 容错处理
+      await _prefs.setString(syncTokenKey, token);
+    }
+
     await _prefs.setString(syncGistIdKey, config.gistId.trim());
     await _prefs.setBool(syncAutoKey, config.autoSync);
     await _prefs.setString(syncLastTimeKey, config.lastSyncTime);
