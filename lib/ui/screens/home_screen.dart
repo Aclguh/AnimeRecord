@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:reorderables/reorderables.dart';
 import '../../models/anime_record.dart';
@@ -30,13 +31,90 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   final FocusNode _searchFocusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _scrollAreaKey = GlobalKey();
+
+  bool _isDragging = false;
+  double _lastPointerY = 0;
+  Ticker? _autoScrollTicker;
+  DateTime _lastLoadMoreTime = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _autoScrollTicker = createTicker(_onAutoScrollTick);
+  }
 
   @override
   void dispose() {
+    _autoScrollTicker?.dispose();
+    _scrollController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  void _onAutoScrollTick(Duration elapsed) {
+    if (!_isDragging || !_scrollController.hasClients) return;
+
+    final renderBox = _scrollAreaKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null || !renderBox.hasSize) return;
+
+    final globalOffset = renderBox.localToGlobal(Offset.zero);
+    final topBound = globalOffset.dy;
+    final bottomBound = globalOffset.dy + renderBox.size.height;
+
+    const double edgeZone = 140.0; // 边缘感应区域大小（像素）
+    double velocity = 0.0; // 滚动速度（像素/秒，负数往上滚，正数往下滚）
+
+    if (_lastPointerY < topBound + edgeZone) {
+      // 靠近上边界：上翻/往上滚动
+      final distance = (_lastPointerY - topBound).clamp(0.0, edgeZone);
+      final ratio = (edgeZone - distance) / edgeZone; // 越靠近边缘越接近 1.0
+      velocity = -(120.0 + ratio * ratio * 880.0); // 120 ~ 1000 px/s
+    } else if (_lastPointerY > bottomBound - edgeZone) {
+      // 靠近下边界：下翻/往下滚动
+      final distance = (bottomBound - _lastPointerY).clamp(0.0, edgeZone);
+      final ratio = (edgeZone - distance) / edgeZone; // 越靠近边缘越接近 1.0
+      velocity = 120.0 + ratio * ratio * 880.0; // 120 ~ 1000 px/s
+    }
+
+    if (velocity != 0.0) {
+      final double delta = velocity * 0.016; // 16ms 步长
+      final currentOffset = _scrollController.offset;
+      final maxOffset = _scrollController.position.maxScrollExtent;
+      final newOffset = (currentOffset + delta).clamp(0.0, maxOffset);
+
+      if (newOffset != currentOffset) {
+        _scrollController.jumpTo(newOffset);
+      }
+
+      // 如果往下滚动且接近底部，并且还有更多数据，自动触发 loadMore 下翻页
+      if (velocity > 0 && currentOffset >= maxOffset - 180) {
+        final now = DateTime.now();
+        if (now.difference(_lastLoadMoreTime).inMilliseconds > 450) {
+          _lastLoadMoreTime = now;
+          if (widget.animeProvider.hasMore) {
+            widget.animeProvider.loadMore();
+          }
+        }
+      }
+    }
+  }
+
+  void _startAutoScroll() {
+    _isDragging = true;
+    if (_autoScrollTicker != null && !_autoScrollTicker!.isActive) {
+      _autoScrollTicker!.start();
+    }
+  }
+
+  void _stopAutoScroll() {
+    _isDragging = false;
+    if (_autoScrollTicker != null && _autoScrollTicker!.isActive) {
+      _autoScrollTicker!.stop();
+    }
   }
 
   void _openAddDialog() {
@@ -125,22 +203,34 @@ class _HomeScreenState extends State<HomeScreen> {
         autofocus: true,
         child: Scaffold(
           appBar: _buildHeader(context),
-          body: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1240),
-              child: RefreshIndicator(
-                onRefresh: _handleSync,
-                color: Theme.of(context).colorScheme.primary,
-                child: ListenableBuilder(
-                  listenable: widget.animeProvider,
-                  builder: (context, _) {
-                    final provider = widget.animeProvider;
-                    final isDefaultSort = provider.sortBy == SortOption.defaultSort;
+          body: Listener(
+            onPointerDown: (e) => _lastPointerY = e.position.dy,
+            onPointerMove: (e) => _lastPointerY = e.position.dy,
+            onPointerUp: (_) => _stopAutoScroll(),
+            onPointerCancel: (_) => _stopAutoScroll(),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1240),
+                child: RefreshIndicator(
+                  onRefresh: _handleSync,
+                  color: Theme.of(context).colorScheme.primary,
+                  child: ListenableBuilder(
+                    listenable: widget.animeProvider,
+                    builder: (context, _) {
+                      final provider = widget.animeProvider;
+                      final isDefaultSort = provider.sortBy == SortOption.defaultSort;
 
-                    return ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                      children: [
+                      return Container(
+                        key: _scrollAreaKey,
+                        child: Scrollbar(
+                          controller: _scrollController,
+                          thumbVisibility: true,
+                          interactive: true,
+                          child: ListView(
+                            controller: _scrollController,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                            children: [
                         // 1. 统计概览栏
                         StatsBar(
                           totalRecords: provider.totalRecordsCount,
@@ -191,15 +281,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                         const SizedBox(height: 36),
                       ],
-                    );
-                  },
-                ),
-              ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ),
       ),
-    );
+    ),
+  ),
+),
+);
   }
 
   PreferredSizeWidget _buildHeader(BuildContext context) {
@@ -366,9 +459,12 @@ class _HomeScreenState extends State<HomeScreen> {
           return ReorderableWrap(
             spacing: 14,
             runSpacing: 14,
+            onReorderStarted: (_) => _startAutoScroll(),
             onReorder: (oldIndex, newIndex) {
+              _stopAutoScroll();
               provider.reorder(oldIndex, newIndex);
             },
+            onNoReorder: (_) => _stopAutoScroll(),
             children: records.map((record) {
               final double cardHeight = record.coverUrl.trim().isNotEmpty ? 204 : 196;
               return SizedBox(

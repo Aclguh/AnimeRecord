@@ -53,27 +53,27 @@ abstract final class AnimeStatus {
     return 99;
   }
 
-  /// 状态主色调（严格对齐 AGENTS.md 规范：蔷薇粉、紫蓝、天蓝、琥珀黄、中性灰）
+  /// 状态主色调（严格对齐原版网页 style.css 规范：想看蓝 #3B82F6、在看绿 #10B981、看过橙 #F59E0B、搁置灰 #8A94A6、抛弃红 #EF4444）
   static Color getColor(String status, {bool isDark = false}) {
     return switch (status) {
-      watching => const Color(0xFFEC5F7A), // 主题蔷薇粉
-      wantToWatch => isDark ? const Color(0xFFA592E5) : const Color(0xFF8F75D7), // 紫蓝色
-      watched => isDark ? const Color(0xFF67B5EC) : const Color(0xFF4BA3E3), // 天蓝色
-      onHold => isDark ? const Color(0xFFF7B955) : const Color(0xFFF5A623), // 琥珀黄
-      dropped => isDark ? const Color(0xFFB0B0B0) : const Color(0xFF9E9E9E), // 中性灰
-      _ => const Color(0xFF9E9E9E),
+      wantToWatch => isDark ? const Color(0xFF60A5FA) : const Color(0xFF3B82F6), // 想看: 蓝
+      watching => isDark ? const Color(0xFF34D399) : const Color(0xFF10B981),    // 在看: 绿
+      watched => isDark ? const Color(0xFFFBBF24) : const Color(0xFFF59E0B),     // 看过: 琥珀橙
+      onHold => isDark ? const Color(0xFF9AA4B8) : const Color(0xFF8A94A6),      // 搁置: 蓝灰
+      dropped => isDark ? const Color(0xFFF87171) : const Color(0xFFEF4444),     // 抛弃: 红
+      _ => isDark ? const Color(0xFF9AA4B8) : const Color(0xFF8A94A6),
     };
   }
 
-  /// 状态徽标与背景底色（柔和过渡浅底）
+  /// 状态徽标与背景底色（严格对齐原版网页软底色）
   static Color getSoftColor(String status, {bool isDark = false}) {
     return switch (status) {
-      watching => isDark ? const Color(0xFF33161F) : const Color(0xFFFFEDF1),
-      wantToWatch => isDark ? const Color(0xFF221D38) : const Color(0xFFF3EFFF),
-      watched => isDark ? const Color(0xFF132338) : const Color(0xFFEBF5FF),
-      onHold => isDark ? const Color(0xFF312513) : const Color(0xFFFFF7EB),
-      dropped => isDark ? const Color(0xFF232427) : const Color(0xFFF2F3F5),
-      _ => isDark ? const Color(0xFF1E2025) : const Color(0xFFF3F4F6),
+      wantToWatch => isDark ? const Color(0xFF16243D) : const Color(0xFFE8F1FF),
+      watching => isDark ? const Color(0xFF10251D) : const Color(0xFFE6F8F1),
+      watched => isDark ? const Color(0xFF2A2110) : const Color(0xFFFFF5E3),
+      onHold => isDark ? const Color(0xFF232733) : const Color(0xFFEEF1F5),
+      dropped => isDark ? const Color(0xFF2A1517) : const Color(0xFFFFECEC),
+      _ => isDark ? const Color(0xFF1C2029) : const Color(0xFFF1F5F9),
     };
   }
 }

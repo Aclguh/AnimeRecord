@@ -18,19 +18,19 @@ class AnimeThemeColors extends ThemeExtension<AnimeThemeColors> {
   });
 
   static const light = AnimeThemeColors(
-    wantToWatch: Color(0xFF8F75D7), // 紫蓝色
-    watching: Color(0xFFEC5F7A),    // 主题蔷薇粉
-    watched: Color(0xFF4BA3E3),     // 天蓝色
-    onHold: Color(0xFFF5A623),      // 琥珀黄
-    dropped: Color(0xFF9E9E9E),     // 中性灰
+    wantToWatch: Color(0xFF3B82F6), // 想看: 蓝
+    watching: Color(0xFF10B981),    // 在看: 绿
+    watched: Color(0xFFF59E0B),     // 看过: 琥珀橙
+    onHold: Color(0xFF8A94A6),      // 搁置: 蓝灰
+    dropped: Color(0xFFEF4444),     // 抛弃: 红
   );
 
   static const dark = AnimeThemeColors(
-    wantToWatch: Color(0xFFA592E5),
-    watching: Color(0xFFF2738B),
-    watched: Color(0xFF67B5EC),
-    onHold: Color(0xFFF7B955),
-    dropped: Color(0xFFB0B0B0),
+    wantToWatch: Color(0xFF60A5FA),
+    watching: Color(0xFF34D399),
+    watched: Color(0xFFFBBF24),
+    onHold: Color(0xFF9AA4B8),
+    dropped: Color(0xFFF87171),
   );
 
   @override

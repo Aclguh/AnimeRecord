@@ -31,6 +31,9 @@ class _SettingsDialogState extends State<SettingsDialog> {
   late TextEditingController _tokenController;
   late TextEditingController _gistIdController;
   late bool _autoSync;
+  late bool _followScreenSelection;
+
+  final ScrollController _dialogScrollController = ScrollController();
 
   bool _isTokenVisible = false;
   bool _isTestingSync = false;
@@ -44,12 +47,14 @@ class _SettingsDialogState extends State<SettingsDialog> {
     _tokenController = TextEditingController(text: p.syncConfig.token);
     _gistIdController = TextEditingController(text: p.syncConfig.gistId);
     _autoSync = p.syncConfig.autoSync;
+    _followScreenSelection = p.storage.loadFollowScreenRotation();
   }
 
   @override
   void dispose() {
     _tokenController.dispose();
     _gistIdController.dispose();
+    _dialogScrollController.dispose();
     super.dispose();
   }
 
@@ -298,64 +303,138 @@ class _SettingsDialogState extends State<SettingsDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
-              // 主内容滚动区
+              const SizedBox(height: 12),
+              // 主内容滚动区（带上下描边边界与滚动条显示）
               Flexible(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // 1. 默认打开的页面
-                      _buildSectionHeader('默认打开的页面'),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: statusOptions.map((opt) {
-                          final val = opt.$1;
-                          final label = opt.$2;
-                          final isSelected = _defaultStatus == val;
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: borderColor, width: 1.0),
+                      bottom: BorderSide(color: borderColor, width: 1.0),
+                    ),
+                  ),
+                  child: Scrollbar(
+                    controller: _dialogScrollController,
+                    thumbVisibility: true,
+                    child: SingleChildScrollView(
+                      controller: _dialogScrollController,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // 1. 默认打开的页面
+                          _buildSectionHeader('默认打开的页面'),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: statusOptions.map((opt) {
+                              final val = opt.$1;
+                              final label = opt.$2;
+                              final isSelected = _defaultStatus == val;
 
-                          return InkWell(
-                            onTap: () {
-                              setState(() => _defaultStatus = val);
-                              widget.animeProvider.setDefaultStatus(val);
-                            },
-                            borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? theme.colorScheme.primary
-                                    : (isDark ? const Color(0xFF1C2029) : const Color(0xFFF1F5F9)),
+                              return InkWell(
+                                onTap: () {
+                                  setState(() => _defaultStatus = val);
+                                  widget.animeProvider.setDefaultStatus(val);
+                                },
                                 borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                label,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : (isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430)),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? theme.colorScheme.primary
+                                        : (isDark ? const Color(0xFF1C2029) : const Color(0xFFF1F5F9)),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    label,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : (isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430)),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '打开应用时默认展示「${statusOptions.firstWhere((e) => e.$1 == _defaultStatus).$2}」分类',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
                             ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '打开应用时默认展示「${statusOptions.firstWhere((e) => e.$1 == _defaultStatus).$2}」分类',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Divider(color: borderColor, height: 1),
-                      const SizedBox(height: 20),
+                          ),
+                          const SizedBox(height: 18),
+                          Divider(color: borderColor, height: 1),
+                          const SizedBox(height: 18),
+
+                          // 2. 界面与显示设置（跟随屏幕选择）
+                          _buildSectionHeader('界面与显示'),
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF14171E) : const Color(0xFFFBFBFD),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: borderColor),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '跟随屏幕选择',
+                                        style: TextStyle(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '允许应用跟随屏幕方向旋转至横屏（默认关闭，保持竖屏锁定）',
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Switch(
+                                  value: _followScreenSelection,
+                                  activeThumbColor: theme.colorScheme.primary,
+                                  onChanged: (val) async {
+                                    setState(() => _followScreenSelection = val);
+                                    await widget.animeProvider.storage.saveFollowScreenRotation(val);
+                                    if (!val) {
+                                      await SystemChrome.setPreferredOrientations([
+                                        DeviceOrientation.portraitUp,
+                                      ]);
+                                    } else {
+                                      await SystemChrome.setPreferredOrientations([
+                                        DeviceOrientation.portraitUp,
+                                        DeviceOrientation.portraitDown,
+                                        DeviceOrientation.landscapeLeft,
+                                        DeviceOrientation.landscapeRight,
+                                      ]);
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          Divider(color: borderColor, height: 1),
+                          const SizedBox(height: 18),
 
                       // 2. 云端同步 (GitHub Gist)
                       Row(
@@ -499,7 +578,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                       ),
                       const SizedBox(height: 14),
 
-                      // 同步信息操作卡片
+                      // 同步信息操作卡片（换行展示，防止存在同步时间时按钮被挤出屏幕）
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
@@ -507,10 +586,10 @@ class _SettingsDialogState extends State<SettingsDialog> {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: borderColor),
                         ),
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            Row(
                               children: [
                                 Text(
                                   '上次同步：',
@@ -519,40 +598,51 @@ class _SettingsDialogState extends State<SettingsDialog> {
                                     color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
                                   ),
                                 ),
-                                Text(
-                                  widget.animeProvider.syncConfig.lastSyncTime.isNotEmpty
-                                      ? widget.animeProvider.syncConfig.lastSyncTime
-                                          .replaceFirst('T', ' ')
-                                          .split('.')
-                                          .first
-                                      : '从未同步',
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    widget.animeProvider.syncConfig.lastSyncTime.isNotEmpty
+                                        ? widget.animeProvider.syncConfig.lastSyncTime
+                                            .replaceFirst('T', ' ')
+                                            .split('.')
+                                            .first
+                                        : '从未同步',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430),
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                            const Spacer(),
-                            OutlinedButton(
-                              onPressed: _saveSyncSettings,
-                              child: const Text('保存配置'),
-                            ),
-                            const SizedBox(width: 8),
-                            ElevatedButton.icon(
-                              onPressed: widget.animeProvider.isSyncing ? null : _syncNow,
-                              icon: widget.animeProvider.isSyncing
-                                  ? const SizedBox(
-                                      width: 14,
-                                      height: 14,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Icon(Icons.sync_rounded, size: 16),
-                              label: const Text('立即同步'),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: _saveSyncSettings,
+                                    child: const Text('保存配置'),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: widget.animeProvider.isSyncing ? null : _syncNow,
+                                    icon: widget.animeProvider.isSyncing
+                                        ? const SizedBox(
+                                            width: 14,
+                                            height: 14,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Icon(Icons.sync_rounded, size: 16),
+                                    label: const Text('立即同步'),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -645,7 +735,9 @@ class _SettingsDialogState extends State<SettingsDialog> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+            ),
+          ),
+          const SizedBox(height: 16),
               Align(
                 alignment: Alignment.centerRight,
                 child: ElevatedButton(

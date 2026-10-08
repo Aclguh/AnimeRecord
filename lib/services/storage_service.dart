@@ -17,6 +17,7 @@ class StorageService {
   static const String syncGistIdKey = 'anime-record-sync-gist-id';
   static const String syncAutoKey = 'anime-record-sync-auto';
   static const String syncLastTimeKey = 'anime-record-sync-last-time';
+  static const String followScreenRotationKey = 'anime-record-follow-screen-rotation';
 
   static const int dataVersion = 1;
 
@@ -254,6 +255,15 @@ class StorageService {
 
   Future<void> saveTheme(String theme) async {
     await _prefs.setString(themeKey, theme);
+  }
+
+  /// 读取跟随屏幕选择/旋转设置（默认关闭）
+  bool loadFollowScreenRotation() {
+    return _prefs.getBool(followScreenRotationKey) ?? false;
+  }
+
+  Future<void> saveFollowScreenRotation(bool value) async {
+    await _prefs.setBool(followScreenRotationKey, value);
   }
 
   // ============================================

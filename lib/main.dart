@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'services/storage_service.dart';
 import 'state/anime_provider.dart';
 import 'state/theme_provider.dart';
@@ -10,6 +11,21 @@ void main() async {
 
   // 初始化本地持久化存储
   final storageService = await StorageService.init();
+
+  // 设置屏幕方向（默认锁定竖屏，若开启跟随屏幕选择则允许横屏旋转）
+  final followScreen = storageService.loadFollowScreenRotation();
+  if (!followScreen) {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+  } else {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
 
   // 初始化核心状态管理
   final animeProvider = AnimeProvider(storage: storageService);
