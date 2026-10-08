@@ -47,13 +47,20 @@ class SyncService {
       ...?headers,
     };
 
-    http.Response res;
-    if (method == 'POST') {
-      res = await _client.post(url, headers: requestHeaders, body: body);
-    } else if (method == 'PATCH') {
-      res = await _client.patch(url, headers: requestHeaders, body: body);
-    } else {
-      res = await _client.get(url, headers: requestHeaders);
+    final requestFuture = switch (method) {
+      'POST' => _client.post(url, headers: requestHeaders, body: body),
+      'PATCH' => _client.patch(url, headers: requestHeaders, body: body),
+      _ => _client.get(url, headers: requestHeaders),
+    };
+
+    final http.Response res;
+    try {
+      res = await requestFuture.timeout(const Duration(seconds: 15));
+    } catch (e) {
+      if (e is http.ClientException) {
+        throw Exception('网络连接失败，请检查网络环境或代理配置');
+      }
+      throw Exception('GitHub 请求超时，请检查网络连接或代理配置');
     }
 
     if (res.statusCode == 401) {

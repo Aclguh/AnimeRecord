@@ -5,13 +5,13 @@ import '../models/sync_config.dart';
 import '../services/storage_service.dart';
 import '../services/sync_service.dart';
 
-/// 追番记录核心状态管理
+/// 追番记录核心状态管理（维护内存单源真理 Single Source of Truth，具备计算缓存与乐观更新能力）
 class AnimeProvider extends ChangeNotifier {
   final StorageService storage;
   final SyncService _syncService;
 
   List<AnimeRecord> _records = [];
-  String _activeStatus = AnimeStatus.watching;
+  String _activeStatus = AnimeStatus.watchingValue;
   String _activeWeek = '';
   String _searchQuery = '';
   String _sortBy = SortOption.defaultSort;
@@ -24,6 +24,9 @@ class AnimeProvider extends ChangeNotifier {
 
   String? _lastErrorMessage;
 
+  // 过滤与排序结果缓存（Memoization）
+  List<AnimeRecord>? _cachedFilteredRecords;
+
   AnimeProvider({
     required this.storage,
     SyncService? syncService,
@@ -32,7 +35,7 @@ class AnimeProvider extends ChangeNotifier {
   }
 
   // Getters
-  List<AnimeRecord> get allRecords => _records;
+  List<AnimeRecord> get allRecords => List.unmodifiable(_records);
   String get activeStatus => _activeStatus;
   String get activeWeek => _activeWeek;
   String get searchQuery => _searchQuery;
@@ -45,6 +48,7 @@ class AnimeProvider extends ChangeNotifier {
     _activeStatus = storage.loadDefaultStatus();
     _syncConfig = storage.loadSyncConfig();
     _records = storage.loadRecords();
+    _invalidateCache();
 
     // 如果开启自动同步，延时在后台静默触发
     if (_syncConfig.autoSync && _syncConfig.isConfigured) {
@@ -52,6 +56,10 @@ class AnimeProvider extends ChangeNotifier {
         performSync(silent: true);
       });
     }
+  }
+
+  void _invalidateCache() {
+    _cachedFilteredRecords = null;
   }
 
   // ============================================
@@ -62,6 +70,7 @@ class AnimeProvider extends ChangeNotifier {
     if (_activeStatus == status) return;
     _activeStatus = status;
     _currentPage = 1;
+    _invalidateCache();
     notifyListeners();
   }
 
@@ -69,12 +78,15 @@ class AnimeProvider extends ChangeNotifier {
     if (_activeWeek == week) return;
     _activeWeek = week;
     _currentPage = 1;
+    _invalidateCache();
     notifyListeners();
   }
 
   void setSearchQuery(String query) {
+    if (_searchQuery == query) return;
     _searchQuery = query;
     _currentPage = 1;
+    _invalidateCache();
     notifyListeners();
   }
 
@@ -82,6 +94,7 @@ class AnimeProvider extends ChangeNotifier {
     if (_sortBy == sort) return;
     _sortBy = sort;
     _currentPage = 1;
+    _invalidateCache();
     notifyListeners();
   }
 
@@ -92,8 +105,12 @@ class AnimeProvider extends ChangeNotifier {
     }
   }
 
-  /// 过滤及排序后的所有符合条件的记录列表
+  /// 过滤及排序后的所有符合条件的记录列表（带内存缓存保护）
   List<AnimeRecord> get filteredRecords {
+    if (_cachedFilteredRecords != null) {
+      return _cachedFilteredRecords!;
+    }
+
     List<AnimeRecord> list = List.from(_records);
 
     // 1. 状态筛选
@@ -106,7 +123,7 @@ class AnimeProvider extends ChangeNotifier {
       list = list.where((r) => r.week == _activeWeek).toList();
     }
 
-    // 3. 搜索匹配
+    // 3. 搜索匹配（支持中文标题、日文标题、备注评价、标签模糊匹配）
     if (_searchQuery.trim().isNotEmpty) {
       final q = _searchQuery.trim().toLowerCase();
       list = list.where((r) {
@@ -119,7 +136,9 @@ class AnimeProvider extends ChangeNotifier {
     }
 
     // 4. 排序
-    return _sortList(list, _sortBy);
+    final sorted = _sortList(list, _sortBy);
+    _cachedFilteredRecords = sorted;
+    return sorted;
   }
 
   List<AnimeRecord> _sortList(List<AnimeRecord> list, String sort) {
@@ -150,14 +169,11 @@ class AnimeProvider extends ChangeNotifier {
         });
         break;
       default:
-        // 默认排序：状态权重 + 创建时间倒序
+        // 默认排序：按状态权重优先级分组，同一状态内保持用户自定义拖拽顺序
         sorted.sort((a, b) {
           final orderA = AnimeStatus.getOrder(a.status);
           final orderB = AnimeStatus.getOrder(b.status);
-          if (orderA != orderB) {
-            return orderA.compareTo(orderB);
-          }
-          return b.createdAt.compareTo(a.createdAt);
+          return orderA.compareTo(orderB);
         });
         break;
     }
@@ -187,11 +203,11 @@ class AnimeProvider extends ChangeNotifier {
 
   Map<String, int> get statusCounts {
     final counts = <String, int>{
-      AnimeStatus.wantToWatch: 0,
-      AnimeStatus.watching: 0,
-      AnimeStatus.watched: 0,
-      AnimeStatus.onHold: 0,
-      AnimeStatus.dropped: 0,
+      AnimeStatus.wantToWatchValue: 0,
+      AnimeStatus.watchingValue: 0,
+      AnimeStatus.watchedValue: 0,
+      AnimeStatus.onHoldValue: 0,
+      AnimeStatus.droppedValue: 0,
     };
     for (final r in _records) {
       counts[r.status] = (counts[r.status] ?? 0) + 1;
@@ -210,37 +226,69 @@ class AnimeProvider extends ChangeNotifier {
   }
 
   // ============================================
-  // CRUD 操作
+  // CRUD 核心业务操作（内存乐观更新 + 异步持久化）
   // ============================================
 
   Future<AnimeRecord?> addRecord(AnimeRecord record) async {
-    final created = await storage.addRecord(record);
-    if (created != null) {
-      _records = storage.loadRecords();
-      notifyListeners();
-    }
-    return created;
+    final now = DateTime.now().toIso8601String();
+    final newRecord = record.copyWith(
+      createdAt: record.createdAt.isEmpty ? now : record.createdAt,
+      updatedAt: now,
+    );
+
+    // 1. 内存即时更新
+    _records.insert(0, newRecord);
+    _invalidateCache();
+    notifyListeners();
+
+    // 2. 后台异步持久化
+    await storage.saveRecords(_records);
+    await storage.clearDeletedTombstone(newRecord.id);
+
+    return newRecord;
   }
 
   Future<AnimeRecord?> updateRecord(String id, AnimeRecord data) async {
-    final updated = await storage.updateRecord(id, data);
-    if (updated != null) {
-      _records = storage.loadRecords();
-      notifyListeners();
-    }
+    final index = _records.indexWhere((r) => r.id == id);
+    if (index == -1) return null;
+
+    final existing = _records[index];
+    final updated = data.copyWith(
+      id: existing.id,
+      createdAt: existing.createdAt,
+      updatedAt: DateTime.now().toIso8601String(),
+    );
+
+    // 1. 内存即时更新
+    _records[index] = updated;
+    _invalidateCache();
+    notifyListeners();
+
+    // 2. 后台异步持久化
+    await storage.saveRecords(_records);
+    await storage.clearDeletedTombstone(id);
+
     return updated;
   }
 
   Future<bool> deleteRecord(String id) async {
-    final success = await storage.deleteRecord(id);
-    if (success) {
-      _records = storage.loadRecords();
-      notifyListeners();
+    final index = _records.indexWhere((r) => r.id == id);
+    if (index == -1) return false;
+
+    // 1. 内存即时移除
+    _records.removeAt(index);
+    _invalidateCache();
+    notifyListeners();
+
+    // 2. 后台异步持久化与墓碑记录
+    final ok = await storage.saveRecords(_records);
+    if (ok) {
+      await storage.recordDeletedTombstone(id);
     }
-    return success;
+    return ok;
   }
 
-  /// 快捷 +1 集
+  /// 快捷 +1 集（业务状态自动流转）
   Future<({AnimeRecord? record, String? statusChangedMessage})> episodePlusOne(String id) async {
     final index = _records.indexWhere((r) => r.id == id);
     if (index == -1) return (record: null, statusChangedMessage: null);
@@ -251,13 +299,13 @@ class AnimeProvider extends ChangeNotifier {
     String newEndDate = record.endDate;
 
     // 状态自动切换：想看 / 搁置 时点 +1 自动变为在看
-    if (record.status == AnimeStatus.wantToWatch || record.status == AnimeStatus.onHold) {
-      newStatus = AnimeStatus.watching;
+    if (record.status == AnimeStatus.wantToWatchValue || record.status == AnimeStatus.onHoldValue) {
+      newStatus = AnimeStatus.watchingValue;
     }
 
-    // 达到总集数时自动标记为看过
+    // 达到总集数时自动标记为看过并填补结束日期
     if (record.episodesTotal > 0 && newWatched >= record.episodesTotal) {
-      newStatus = AnimeStatus.watched;
+      newStatus = AnimeStatus.watchedValue;
       newEndDate = DateTime.now().toIso8601String().split('T').first;
       newWatched = record.episodesTotal;
     }
@@ -266,24 +314,26 @@ class AnimeProvider extends ChangeNotifier {
       episodesWatched: newWatched,
       status: newStatus,
       endDate: newEndDate,
+      updatedAt: DateTime.now().toIso8601String(),
     );
 
-    final res = await storage.updateRecord(id, updated);
-    if (res != null) {
-      _records = storage.loadRecords();
-      notifyListeners();
+    // 1. 内存即时更新
+    _records[index] = updated;
+    _invalidateCache();
+    notifyListeners();
 
-      String? msg;
-      if (newStatus != record.status) {
-        if (newStatus == AnimeStatus.watched) {
-          msg = '「${res.titleZh}」已追完';
-        } else if (newStatus == AnimeStatus.watching) {
-          msg = '「${res.titleZh}」状态已切换为「在看」';
-        }
+    // 2. 后台异步持久化
+    await storage.saveRecords(_records);
+
+    String? msg;
+    if (newStatus != record.status) {
+      if (newStatus == AnimeStatus.watchedValue) {
+        msg = '「${updated.titleZh}」已追完';
+      } else if (newStatus == AnimeStatus.watchingValue) {
+        msg = '「${updated.titleZh}」状态已切换为「在看」';
       }
-      return (record: res, statusChangedMessage: msg);
     }
-    return (record: null, statusChangedMessage: null);
+    return (record: updated, statusChangedMessage: msg);
   }
 
   /// 拖动重排并持久化可见卡片相对顺序
@@ -292,7 +342,7 @@ class AnimeProvider extends ChangeNotifier {
       _sortBy = SortOption.defaultSort;
     }
 
-    final currentPaged = pagedRecords;
+    final currentPaged = List<AnimeRecord>.from(pagedRecords);
     if (oldIndex < 0 || oldIndex >= currentPaged.length) return;
     if (newIndex < 0 || newIndex > currentPaged.length) return;
 
@@ -303,10 +353,19 @@ class AnimeProvider extends ChangeNotifier {
     final item = currentPaged.removeAt(oldIndex);
     currentPaged.insert(newIndex, item);
 
-    final orderedIds = currentPaged.map((r) => r.id).toList();
-    await storage.reorderRecords(orderedIds);
-    _records = storage.loadRecords();
+    final visibleSet = currentPaged.map((r) => r.id).toSet();
+    int cursor = 0;
+    _records = _records.map((r) {
+      if (visibleSet.contains(r.id)) {
+        return currentPaged[cursor++];
+      }
+      return r;
+    }).toList();
+
+    _invalidateCache();
     notifyListeners();
+
+    await storage.saveRecords(_records);
   }
 
   // ============================================
@@ -329,28 +388,28 @@ class AnimeProvider extends ChangeNotifier {
   }
 
   Future<bool> importRecords(List<AnimeRecord> records, {required bool replace}) async {
-    bool ok;
     if (replace) {
-      ok = await storage.saveRecords(records);
+      _records = List.from(records);
     } else {
-      final current = storage.loadRecords();
-      final existingTitles = current.map((r) => r.titleZh.trim().toLowerCase()).toSet();
-      final merged = List<AnimeRecord>.from(current);
+      final existingTitles = _records.map((r) => r.titleZh.trim().toLowerCase()).toSet();
+      final existingIds = _records.map((r) => r.id).toSet();
+      final merged = List<AnimeRecord>.from(_records);
 
       for (final r in records) {
-        if (!existingTitles.contains(r.titleZh.trim().toLowerCase())) {
+        final titleKey = r.titleZh.trim().toLowerCase();
+        if (!existingTitles.contains(titleKey) && !existingIds.contains(r.id)) {
           merged.add(r);
-          existingTitles.add(r.titleZh.trim().toLowerCase());
+          existingTitles.add(titleKey);
+          existingIds.add(r.id);
         }
       }
-      ok = await storage.saveRecords(merged);
+      _records = merged;
     }
 
-    if (ok) {
-      _records = storage.loadRecords();
-      notifyListeners();
-    }
-    return ok;
+    _invalidateCache();
+    notifyListeners();
+
+    return await storage.saveRecords(_records);
   }
 
   // ============================================
@@ -370,7 +429,7 @@ class AnimeProvider extends ChangeNotifier {
       _isSyncing = true;
       notifyListeners();
 
-      final localRecords = storage.loadRecords();
+      final localRecords = _records;
       final localTombstones = storage.getTombstones();
 
       // 1. 拉取云端
@@ -387,8 +446,10 @@ class AnimeProvider extends ChangeNotifier {
         remoteData.tombstones,
       );
 
-      // 3. 保存至本地
-      await storage.saveRecords(mergeResult.mergedRecords);
+      // 3. 更新本地内存与持久化
+      _records = mergeResult.mergedRecords;
+      _invalidateCache();
+      await storage.saveRecords(_records);
       await storage.saveTombstones(mergeResult.mergedTombstones);
 
       // 4. 回写至云端 Gist
@@ -403,9 +464,6 @@ class AnimeProvider extends ChangeNotifier {
       final now = DateTime.now().toIso8601String();
       final updatedConfig = _syncConfig.copyWith(lastSyncTime: now);
       await setSyncConfig(updatedConfig);
-
-      _records = storage.loadRecords();
-      notifyListeners();
 
       final count = mergeResult.mergedRecords.length;
       return (success: true, message: '同步成功！共 $count 部番剧已与云端同步');
@@ -432,9 +490,8 @@ class AnimeProvider extends ChangeNotifier {
 
   /// 自动新建 Gist
   Future<String> autoCreateGist(String token) async {
-    final records = storage.loadRecords();
     final tombstones = storage.getTombstones();
-    final gistId = await _syncService.createSecretGist(token, records, tombstones);
+    final gistId = await _syncService.createSecretGist(token, _records, tombstones);
 
     final updated = _syncConfig.copyWith(
       token: token,
