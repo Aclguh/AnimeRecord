@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/anime_record.dart';
 import '../../models/app_constants.dart';
 
-/// 单张番剧卡片组件（支持封面缩略图、评分徽章、标签芯片与高对比无障碍排版）
+/// 单张番剧卡片组件（未设置海报时无缝恢复原生卡片布局与原生高度，设置海报时自适应图文混排）
 class AnimeCard extends StatelessWidget {
   final AnimeRecord record;
   final VoidCallback onEdit;
@@ -56,109 +56,44 @@ class AnimeCard extends StatelessWidget {
               height: 3.5,
               color: statusColor,
             ),
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 可选海报封面缩略图
-                  if (hasCover) ...[
+            // 内容主体：有海报链接时展示图文混排，无海报时完全采用原生卡片结构（无海报占位）
+            if (hasCover)
+              Padding(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     _buildCoverImage(context, record.coverUrl.trim()),
                     const SizedBox(width: 12),
-                  ],
-                  // 卡片核心信息区
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 徽标区（状态、更新日、播放状态、评分）
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 5,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            // 状态徽标
-                            _buildStatusBadge(record.status, statusColor, statusSoftColor),
-                            // 更新日徽标
-                            if (record.week.isNotEmpty && WeekDay.order.contains(record.week))
-                              _buildWeekBadge(record.week),
-                            // 播放状态徽标
-                            if (record.airStatus.isNotEmpty && AirStatus.allValues.contains(record.airStatus))
-                              _buildAirStatusBadge(record.airStatus),
-                            // 评分徽标
-                            if (record.rating > 0)
-                              _buildRatingBadge(record.rating, isDark),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        // 中文名称
-                        Tooltip(
-                          message: record.titleZh,
-                          child: Text(
-                            record.titleZh.isEmpty ? '未命名番剧' : record.titleZh,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? const Color(0xFFF4F4F5) : const Color(0xFF18181B),
-                              height: 1.25,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        // 日文名称
-                        if (record.titleJa.trim().isNotEmpty) ...[
-                          const SizedBox(height: 3),
-                          Tooltip(
-                            message: record.titleJa,
-                            child: Text(
-                              record.titleJa,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                        // 标签预览 (前2个)
-                        if (record.tags.isNotEmpty) ...[
-                          const SizedBox(height: 6),
-                          Wrap(
-                            spacing: 4,
-                            runSpacing: 4,
-                            children: record.tags.take(2).map((t) {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  '#$t',
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ],
-                        const SizedBox(height: 10),
-                        // 集数进度条
-                        _buildEpisodeSection(context, isCompleted),
-                      ],
+                    Expanded(
+                      child: _buildCardContent(
+                        context,
+                        isDark: isDark,
+                        statusColor: statusColor,
+                        statusSoftColor: statusSoftColor,
+                        isCompleted: isCompleted,
+                        compact: true,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: _buildCardContent(
+                  context,
+                  isDark: isDark,
+                  statusColor: statusColor,
+                  statusSoftColor: statusSoftColor,
+                  isCompleted: isCompleted,
+                  compact: false,
+                ),
               ),
-            ),
             const Spacer(),
             // 卡片底部操作栏
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF222226) : const Color(0xFFFAFAF9),
                 border: Border(
@@ -170,9 +105,9 @@ class AnimeCard extends StatelessWidget {
                   // 编辑按钮
                   InkWell(
                     onTap: onEdit,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -195,17 +130,17 @@ class AnimeCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  // 删除按钮（扩大触控尺寸）
+                  // 删除按钮
                   IconButton(
                     onPressed: onDelete,
                     icon: Icon(
                       Icons.delete_outline_rounded,
-                      size: 17,
+                      size: 16,
                       color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
                     ),
-                    splashRadius: 18,
-                    padding: const EdgeInsets.all(6),
-                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    splashRadius: 16,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                     tooltip: '删除记录',
                   ),
                   const Spacer(),
@@ -221,7 +156,7 @@ class AnimeCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 10),
                   // +1 集 按钮 / 已追完 状态
                   _buildEpisodeButton(context, isCompleted),
                 ],
@@ -230,6 +165,75 @@ class AnimeCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCardContent(
+    BuildContext context, {
+    required bool isDark,
+    required Color statusColor,
+    required Color statusSoftColor,
+    required bool isCompleted,
+    required bool compact,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 徽标区（状态、更新日、播放状态、评分）
+        Wrap(
+          spacing: 6,
+          runSpacing: 5,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            // 状态徽标
+            _buildStatusBadge(record.status, statusColor, statusSoftColor),
+            // 更新日徽标
+            if (record.week.isNotEmpty && WeekDay.order.contains(record.week))
+              _buildWeekBadge(record.week),
+            // 播放状态徽标
+            if (record.airStatus.isNotEmpty && AirStatus.allValues.contains(record.airStatus))
+              _buildAirStatusBadge(record.airStatus),
+            // 评分徽标
+            if (record.rating > 0)
+              _buildRatingBadge(record.rating, isDark),
+          ],
+        ),
+        SizedBox(height: compact ? 8 : 12),
+        // 中文名称
+        Tooltip(
+          message: record.titleZh,
+          child: Text(
+            record.titleZh.isEmpty ? '未命名番剧' : record.titleZh,
+            style: TextStyle(
+              fontSize: compact ? 16 : 16.5,
+              fontWeight: FontWeight.bold,
+              color: isDark ? const Color(0xFFF4F4F5) : const Color(0xFF18181B),
+              height: 1.3,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        // 日文名称
+        if (record.titleJa.trim().isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Tooltip(
+            message: record.titleJa,
+            child: Text(
+              record.titleJa,
+              style: TextStyle(
+                fontSize: compact ? 12 : 12.5,
+                color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+        SizedBox(height: compact ? 8 : 12),
+        // 集数信息与进度条
+        _buildEpisodeSection(context, isCompleted),
+      ],
     );
   }
 
@@ -421,7 +425,7 @@ class AnimeCard extends StatelessWidget {
               Text(
                 '${record.episodesWatched}',
                 style: TextStyle(
-                  fontSize: 13.5,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: isDark ? const Color(0xFFF4F4F5) : const Color(0xFF18181B),
                 ),
@@ -429,7 +433,7 @@ class AnimeCard extends StatelessWidget {
               Text(
                 ' / ${record.episodesTotal}',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 12.5,
                   color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
                 ),
               ),
@@ -437,14 +441,14 @@ class AnimeCard extends StatelessWidget {
               Text(
                 '剩 $remaining 集',
                 style: TextStyle(
-                  fontSize: 11.5,
+                  fontSize: 12,
                   fontWeight: FontWeight.w500,
                   color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF52525B),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 6),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
@@ -464,7 +468,7 @@ class AnimeCard extends StatelessWidget {
       return Text(
         '已看 ${record.episodesWatched} 集',
         style: TextStyle(
-          fontSize: 12.5,
+          fontSize: 13,
           fontWeight: FontWeight.w600,
           color: isDark ? const Color(0xFFF4F4F5) : const Color(0xFF18181B),
         ),
@@ -474,7 +478,7 @@ class AnimeCard extends StatelessWidget {
     return Text(
       '尚未开始观看',
       style: TextStyle(
-        fontSize: 12,
+        fontSize: 12.5,
         color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
       ),
     );
@@ -483,7 +487,7 @@ class AnimeCard extends StatelessWidget {
   Widget _buildEpisodeButton(BuildContext context, bool isCompleted) {
     if (isCompleted) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: const Color(0xFF10B981).withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(8),
@@ -491,12 +495,12 @@ class AnimeCard extends StatelessWidget {
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.check_rounded, size: 13, color: Color(0xFF10B981)),
-            SizedBox(width: 3),
+            Icon(Icons.check_rounded, size: 14, color: Color(0xFF10B981)),
+            SizedBox(width: 4),
             Text(
               '已追完',
               style: TextStyle(
-                fontSize: 11.5,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF10B981),
               ),
@@ -512,7 +516,7 @@ class AnimeCard extends StatelessWidget {
       onTap: onEpisodePlusOne,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: BoxDecoration(
           color: theme.colorScheme.primary,
           borderRadius: BorderRadius.circular(8),

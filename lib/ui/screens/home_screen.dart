@@ -370,10 +370,11 @@ class _HomeScreenState extends State<HomeScreen> {
               provider.reorder(oldIndex, newIndex);
             },
             children: records.map((record) {
+              final double cardHeight = record.coverUrl.trim().isNotEmpty ? 204 : 196;
               return SizedBox(
                 key: ValueKey(record.id),
                 width: itemWidth,
-                height: 204,
+                height: cardHeight,
                 child: AnimeCard(
                   record: record,
                   onEdit: () => _openEditDialog(record),
@@ -390,10 +391,11 @@ class _HomeScreenState extends State<HomeScreen> {
           spacing: 14,
           runSpacing: 14,
           children: records.map((record) {
+            final double cardHeight = record.coverUrl.trim().isNotEmpty ? 204 : 196;
             return SizedBox(
               key: ValueKey(record.id),
               width: itemWidth,
-              height: 204,
+              height: cardHeight,
               child: AnimeCard(
                 record: record,
                 onEdit: () => _openEditDialog(record),
