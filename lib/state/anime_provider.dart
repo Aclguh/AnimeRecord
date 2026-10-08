@@ -26,6 +26,7 @@ class AnimeProvider extends ChangeNotifier {
 
   // 过滤与排序结果缓存（Memoization）
   List<AnimeRecord>? _cachedFilteredRecords;
+  Map<String, int>? _cachedActiveWeekCounts;
 
   AnimeProvider({
     required this.storage,
@@ -37,7 +38,12 @@ class AnimeProvider extends ChangeNotifier {
   // Getters
   List<AnimeRecord> get allRecords => List.unmodifiable(_records);
   String get activeStatus => _activeStatus;
-  String get activeWeek => _activeWeek;
+  String get activeWeek {
+    if (_activeWeek.isNotEmpty && (activeWeekCounts[_activeWeek] ?? 0) == 0) {
+      return '';
+    }
+    return _activeWeek;
+  }
   String get searchQuery => _searchQuery;
   String get sortBy => _sortBy;
   bool get isSyncing => _isSyncing;
@@ -60,6 +66,7 @@ class AnimeProvider extends ChangeNotifier {
 
   void _invalidateCache() {
     _cachedFilteredRecords = null;
+    _cachedActiveWeekCounts = null;
   }
 
   // ============================================
@@ -69,6 +76,7 @@ class AnimeProvider extends ChangeNotifier {
   void setStatusFilter(String status) {
     if (_activeStatus == status) return;
     _activeStatus = status;
+    _activeWeek = ''; // 切换主状态 Tab 时重置周几筛选，展示新状态的全量数据
     _currentPage = 1;
     _invalidateCache();
     notifyListeners();
@@ -105,25 +113,16 @@ class AnimeProvider extends ChangeNotifier {
     }
   }
 
-  /// 过滤及排序后的所有符合条件的记录列表（带内存缓存保护）
-  List<AnimeRecord> get filteredRecords {
-    if (_cachedFilteredRecords != null) {
-      return _cachedFilteredRecords!;
-    }
+  /// 符合顶部筛选（状态与搜索匹配）的记录列表
+  List<AnimeRecord> get _topFilteredRecords {
+    List<AnimeRecord> list = _records;
 
-    List<AnimeRecord> list = List.from(_records);
-
-    // 1. 状态筛选
+    // 1. 顶部状态筛选
     if (_activeStatus != 'all') {
       list = list.where((r) => r.status == _activeStatus).toList();
     }
 
-    // 2. 周几筛选
-    if (_activeWeek.isNotEmpty) {
-      list = list.where((r) => r.week == _activeWeek).toList();
-    }
-
-    // 3. 搜索匹配（支持中文标题、日文标题、备注评价、标签模糊匹配）
+    // 2. 顶部搜索匹配（支持中文标题、日文标题、备注评价、标签模糊匹配）
     if (_searchQuery.trim().isNotEmpty) {
       final q = _searchQuery.trim().toLowerCase();
       list = list.where((r) {
@@ -135,7 +134,25 @@ class AnimeProvider extends ChangeNotifier {
       }).toList();
     }
 
-    // 4. 排序
+    return list;
+  }
+
+  /// 过滤及排序后的所有符合条件的记录列表（带内存缓存保护）
+  List<AnimeRecord> get filteredRecords {
+    if (_cachedFilteredRecords != null) {
+      return _cachedFilteredRecords!;
+    }
+
+    // 1. 顶部筛选结果
+    List<AnimeRecord> list = _topFilteredRecords;
+
+    // 2. 周几联动筛选（若当前选中的周几在当前顶部筛选下已无任何匹配记录，则回退为全部）
+    final currentWeek = activeWeek;
+    if (currentWeek.isNotEmpty) {
+      list = list.where((r) => r.week == currentWeek).toList();
+    }
+
+    // 3. 排序
     final sorted = _sortList(list, _sortBy);
     _cachedFilteredRecords = sorted;
     return sorted;
@@ -216,12 +233,17 @@ class AnimeProvider extends ChangeNotifier {
   }
 
   Map<String, int> get activeWeekCounts {
+    if (_cachedActiveWeekCounts != null) {
+      return _cachedActiveWeekCounts!;
+    }
+
     final counts = <String, int>{};
-    for (final r in _records) {
+    for (final r in _topFilteredRecords) {
       if (r.week.isNotEmpty && WeekDay.order.contains(r.week)) {
         counts[r.week] = (counts[r.week] ?? 0) + 1;
       }
     }
+    _cachedActiveWeekCounts = counts;
     return counts;
   }
 

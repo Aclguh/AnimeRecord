@@ -245,6 +245,51 @@ void main() {
       expect(provider.totalEpisodesWatched, equals(17));
       expect(provider.statusCounts[AnimeStatus.watching], equals(1));
       expect(provider.statusCounts[AnimeStatus.watched], equals(1));
+
+      // 在当前「在看」状态下，周一更新日计数应为 1
+      expect(provider.activeWeekCounts[WeekDay.mon], equals(1));
+
+      // 切换至「全部」状态，周一更新日计数应为 2
+      provider.setStatusFilter('all');
+      expect(provider.activeWeekCounts[WeekDay.mon], equals(2));
+
+      // 切换至「已看」状态，周一更新日计数应为 1
+      provider.setStatusFilter(AnimeStatus.watched);
+      expect(provider.activeWeekCounts[WeekDay.mon], equals(1));
+
+      // 切换至「想看」状态，周一更新日计数应为 0（无对应项）
+      provider.setStatusFilter(AnimeStatus.wantToWatch);
+      expect(provider.activeWeekCounts[WeekDay.mon] ?? 0, equals(0));
+    });
+
+    test('weekday counts reflect top filter: both monday anime watched means 0 monday count in watching view', () async {
+      // 场景：两部周一番剧，但状态均为「已看」
+      await provider.addRecord(
+        AnimeRecord.createEmpty().copyWith(
+          titleZh: '周一番剧一',
+          status: AnimeStatus.watched,
+          week: WeekDay.mon,
+        ),
+      );
+      await provider.addRecord(
+        AnimeRecord.createEmpty().copyWith(
+          titleZh: '周一番剧二',
+          status: AnimeStatus.watched,
+          week: WeekDay.mon,
+        ),
+      );
+
+      // 1. 在「在看」界面下，周一计数应为 0
+      provider.setStatusFilter(AnimeStatus.watching);
+      expect(provider.activeWeekCounts[WeekDay.mon] ?? 0, equals(0));
+      expect(provider.activeWeek, equals(''));
+
+      // 2. 在「已看」界面下，周一计数应为 2
+      provider.setStatusFilter(AnimeStatus.watched);
+      expect(provider.activeWeekCounts[WeekDay.mon], equals(2));
+
+      // 3. 在「全部」界面下，周一计数应为 2
+      provider.setStatusFilter('all');
       expect(provider.activeWeekCounts[WeekDay.mon], equals(2));
     });
   });
