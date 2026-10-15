@@ -487,7 +487,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           },
           onNoReorder: (_) => _stopAutoScroll(),
           children: records.map((record) {
-            final double cardHeight = record.coverUrl.trim().isNotEmpty ? 204 : 196;
+            final double cardHeight = record.coverUrl.trim().isNotEmpty ? 212 : 210;
             return SizedBox(
               key: ValueKey(record.id),
               width: itemWidth,
@@ -520,7 +520,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         return SliverGrid.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            mainAxisExtent: 204,
+            mainAxisExtent: 212,
             crossAxisSpacing: 14,
             mainAxisSpacing: 14,
           ),
