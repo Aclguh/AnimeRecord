@@ -1,0 +1,67 @@
+{
+  "@@locale": "zh",
+  "appTitle": "看番记录",
+  "@appTitle": {
+    "description": "应用程序主标题"
+  },
+  "addAnime": "添加番剧",
+  "@addAnime": {
+    "description": "添加番剧操作文案"
+  },
+  "editAnime": "编辑番剧",
+  "@editAnime": {
+    "description": "编辑番剧操作文案"
+  },
+  "deleteAnime": "删除番剧",
+  "@deleteAnime": {
+    "description": "删除番剧操作文案"
+  },
+  "sync": "同步",
+  "@sync": {
+    "description": "同步按钮文案"
+  },
+  "settings": "设置",
+  "@settings": {
+    "description": "设置标题文案"
+  },
+  "save": "保存",
+  "@save": {
+    "description": "保存按钮文案"
+  },
+  "cancel": "取消",
+  "@cancel": {
+    "description": "取消按钮文案"
+  },
+  "confirm": "确认",
+  "@confirm": {
+    "description": "确认按钮文案"
+  },
+  "totalRecords": "共收录",
+  "@totalRecords": {
+    "description": "统计栏共收录记录数标签"
+  },
+  "episodesWatched": "集已观看",
+  "@episodesWatched": {
+    "description": "统计栏已观看集数标签"
+  },
+  "statusWantToWatch": "想看",
+  "@statusWantToWatch": {
+    "description": "想看状态标签"
+  },
+  "statusWatching": "在看",
+  "@statusWatching": {
+    "description": "在看状态标签"
+  },
+  "statusWatched": "看过",
+  "@statusWatched": {
+    "description": "看过状态标签"
+  },
+  "statusOnHold": "搁置",
+  "@statusOnHold": {
+    "description": "搁置状态标签"
+  },
+  "statusDropped": "抛弃",
+  "@statusDropped": {
+    "description": "抛弃状态标签"
+  }
+}

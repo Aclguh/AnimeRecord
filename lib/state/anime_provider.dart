@@ -7,7 +7,7 @@ import '../services/sync_service.dart';
 
 /// 追番记录核心状态管理（维护内存单源真理 Single Source of Truth，具备计算缓存与乐观更新能力）
 class AnimeProvider extends ChangeNotifier {
-  final StorageService storage;
+  final IStorageService storage;
   final SyncService _syncService;
 
   List<AnimeRecord> _records = [];

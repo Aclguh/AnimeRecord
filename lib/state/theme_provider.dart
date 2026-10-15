@@ -3,7 +3,7 @@ import '../services/storage_service.dart';
 
 /// 全局主题模式管理
 class ThemeProvider extends ChangeNotifier {
-  final StorageService _storage;
+  final IStorageService _storage;
   ThemeMode _themeMode = ThemeMode.system;
 
   ThemeProvider(this._storage) {

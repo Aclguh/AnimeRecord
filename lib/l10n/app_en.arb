@@ -1,0 +1,19 @@
+{
+  "@@locale": "en",
+  "appTitle": "Anime Record",
+  "addAnime": "Add Anime",
+  "editAnime": "Edit Anime",
+  "deleteAnime": "Delete Anime",
+  "sync": "Sync",
+  "settings": "Settings",
+  "save": "Save",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "totalRecords": "Total",
+  "episodesWatched": "eps watched",
+  "statusWantToWatch": "Plan to Watch",
+  "statusWatching": "Watching",
+  "statusWatched": "Completed",
+  "statusOnHold": "On Hold",
+  "statusDropped": "Dropped"
+}

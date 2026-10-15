@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'l10n/generated/app_localizations.dart';
 import 'services/storage_service.dart';
 import 'state/anime_provider.dart';
 import 'state/theme_provider.dart';
@@ -77,6 +78,8 @@ class _AnimeRecordAppState extends State<AnimeRecordApp> {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: widget.themeProvider.themeMode,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: HomeScreen(
         animeProvider: widget.animeProvider,
         themeProvider: widget.themeProvider,

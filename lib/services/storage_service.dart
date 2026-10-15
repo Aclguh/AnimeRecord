@@ -6,8 +6,33 @@ import '../models/anime_record.dart';
 import '../models/app_constants.dart';
 import '../models/sync_config.dart';
 
+/// 本地持久化与偏好存储抽象接口（解耦底层存储实现，方便未来无缝迁移到 SQLite / Drift / Isar 数据库）
+abstract interface class IStorageService {
+  List<AnimeRecord> loadRecords();
+  Future<bool> saveRecords(List<AnimeRecord> records);
+  Future<AnimeRecord?> addRecord(AnimeRecord record);
+  Future<AnimeRecord?> updateRecord(String id, AnimeRecord data);
+  Future<bool> deleteRecord(String id);
+  Future<bool> reorderRecords(List<String> visibleIds);
+
+  Map<String, String> getTombstones();
+  Future<void> saveTombstones(Map<String, String> tombstones);
+  Future<void> recordDeletedTombstone(String id);
+  Future<void> clearDeletedTombstone(String id);
+
+  String loadDefaultStatus();
+  Future<void> saveDefaultStatus(String status);
+  String loadTheme();
+  Future<void> saveTheme(String theme);
+  bool loadFollowScreenRotation();
+  Future<void> saveFollowScreenRotation(bool value);
+
+  SyncConfig loadSyncConfig();
+  Future<void> saveSyncConfig(SyncConfig config);
+}
+
 /// 本地数据持久化服务（普通数据使用 SharedPreferences，敏感凭据使用硬件级 FlutterSecureStorage）
-class StorageService {
+class StorageService implements IStorageService {
   static const String storageKey = 'anime-record-records';
   static const String backupKey = 'anime-record-records-backup';
   static const String versionKey = 'anime-record-version';
@@ -84,6 +109,7 @@ class StorageService {
   }
 
   /// 读取所有记录（优先从主存储加载，主存储数据损坏时自动尝试从容灾备份快照恢复并自动修复）
+  @override
   List<AnimeRecord> loadRecords() {
     final raw = _prefs.getString(storageKey);
     if (raw != null && raw.trim().isNotEmpty) {
@@ -113,6 +139,7 @@ class StorageService {
   }
 
   /// 保存所有记录（在写入新记录前自动保留上一份有效快照作为容灾备份）
+  @override
   Future<bool> saveRecords(List<AnimeRecord> records) async {
     try {
       // 1. 若当前主存储存在有效数据，先转存为快照备份
@@ -133,6 +160,7 @@ class StorageService {
   }
 
   /// 添加单条记录（用于兼容独立调用）
+  @override
   Future<AnimeRecord?> addRecord(AnimeRecord record) async {
     final records = loadRecords();
     final now = DateTime.now().toIso8601String();
@@ -150,6 +178,7 @@ class StorageService {
   }
 
   /// 更新单条记录
+  @override
   Future<AnimeRecord?> updateRecord(String id, AnimeRecord data) async {
     final records = loadRecords();
     final index = records.indexWhere((r) => r.id == id);
@@ -172,6 +201,7 @@ class StorageService {
   }
 
   /// 删除记录
+  @override
   Future<bool> deleteRecord(String id) async {
     final records = loadRecords();
     final index = records.indexWhere((r) => r.id == id);
@@ -187,6 +217,7 @@ class StorageService {
   }
 
   /// 依据可视 ID 调整排序顺序
+  @override
   Future<bool> reorderRecords(List<String> visibleIds) async {
     final records = loadRecords();
     final moved = <AnimeRecord>[];
@@ -221,6 +252,7 @@ class StorageService {
   // 墓碑管理（防止已删除记录多端复活）
   // ============================================
 
+  @override
   Map<String, String> getTombstones() {
     try {
       final raw = _prefs.getString(tombstonesKey);
@@ -235,6 +267,7 @@ class StorageService {
     }
   }
 
+  @override
   Future<void> saveTombstones(Map<String, String> tombstones) async {
     try {
       await _prefs.setString(tombstonesKey, jsonEncode(tombstones));
@@ -243,6 +276,7 @@ class StorageService {
     }
   }
 
+  @override
   Future<void> recordDeletedTombstone(String id) async {
     final tombstones = getTombstones();
     tombstones[id] = DateTime.now().toIso8601String();
@@ -257,6 +291,7 @@ class StorageService {
     await saveTombstones(tombstones);
   }
 
+  @override
   Future<void> clearDeletedTombstone(String id) async {
     final tombstones = getTombstones();
     if (tombstones.containsKey(id)) {
@@ -270,6 +305,7 @@ class StorageService {
   // ============================================
 
   /// 读取默认打开状态
+  @override
   String loadDefaultStatus() {
     final v = _prefs.getString(defaultStatusKey);
     if (v != null && (v == 'all' || AnimeStatus.allValues.contains(v))) {
@@ -278,24 +314,29 @@ class StorageService {
     return AnimeStatus.watchingValue;
   }
 
+  @override
   Future<void> saveDefaultStatus(String status) async {
     await _prefs.setString(defaultStatusKey, status);
   }
 
   /// 读取主题
+  @override
   String loadTheme() {
     return _prefs.getString(themeKey) ?? 'system';
   }
 
+  @override
   Future<void> saveTheme(String theme) async {
     await _prefs.setString(themeKey, theme);
   }
 
   /// 读取跟随屏幕选择/旋转设置（默认关闭）
+  @override
   bool loadFollowScreenRotation() {
     return _prefs.getBool(followScreenRotationKey) ?? false;
   }
 
+  @override
   Future<void> saveFollowScreenRotation(bool value) async {
     await _prefs.setBool(followScreenRotationKey, value);
   }
@@ -304,6 +345,7 @@ class StorageService {
   // 云端同步配置（敏感 Token 通过 SecureStorage 安全加密）
   // ============================================
 
+  @override
   SyncConfig loadSyncConfig() {
     return SyncConfig(
       token: _cachedToken,
@@ -313,6 +355,7 @@ class StorageService {
     );
   }
 
+  @override
   Future<void> saveSyncConfig(SyncConfig config) async {
     final token = config.token.trim();
     _cachedToken = token;

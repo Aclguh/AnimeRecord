@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/anime_record.dart';
 import '../../models/app_constants.dart';
+import '../theme/app_theme.dart';
 import 'anime_cover_image.dart';
 
 /// 单张番剧卡片组件（未设置海报时无缝恢复原生卡片布局与原生高度，设置海报时自适应图文混排）
@@ -26,8 +27,8 @@ class AnimeCard extends StatelessWidget {
     final statusColor = AnimeStatus.getColor(record.status, isDark: isDark);
     final statusSoftColor = AnimeStatus.getSoftColor(record.status, isDark: isDark);
 
-    final borderColor = isDark ? const Color(0xFF3F3F46) : const Color(0xFFE4E4E7);
-    final cardBg = isDark ? const Color(0xFF27272A) : Colors.white;
+    final borderColor = isDark ? AppTheme.borderDark : AppTheme.borderLight;
+    final cardBg = isDark ? AppTheme.surfaceDark : AppTheme.surfaceLight;
 
     final isCompleted = record.status == AnimeStatus.watched ||
         (record.episodesTotal > 0 && record.episodesWatched >= record.episodesTotal);
@@ -115,7 +116,7 @@ class AnimeCard extends StatelessWidget {
                           Icon(
                             Icons.edit_outlined,
                             size: 15,
-                            color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF52525B),
+                            color: isDark ? AppTheme.textSubDark : AppTheme.textSubLight,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -123,7 +124,7 @@ class AnimeCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w500,
-                              color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF52525B),
+                              color: isDark ? AppTheme.textSubDark : AppTheme.textSubLight,
                             ),
                           ),
                         ],
@@ -137,7 +138,7 @@ class AnimeCard extends StatelessWidget {
                     icon: Icon(
                       Icons.delete_outline_rounded,
                       size: 16,
-                      color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
+                      color: isDark ? AppTheme.textSubDark : AppTheme.textMutedLight,
                     ),
                     splashRadius: 16,
                     padding: EdgeInsets.zero,
@@ -153,7 +154,7 @@ class AnimeCard extends StatelessWidget {
                         record.formatRelativeUpdatedAt(),
                         style: TextStyle(
                           fontSize: 11.5,
-                          color: isDark ? const Color(0xFF71717A) : const Color(0xFFA1A1AA),
+                          color: isDark ? AppTheme.textMutedDark : AppTheme.textSubDark,
                         ),
                       ),
                     ),
