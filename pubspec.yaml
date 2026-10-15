@@ -38,6 +38,7 @@ dependencies:
   intl: ^0.20.3
   reorderables: ^0.6.0
   flutter_secure_storage: ^11.2.0
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:

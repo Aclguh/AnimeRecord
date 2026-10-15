@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/anime_record.dart';
 import '../../models/app_constants.dart';
+import 'anime_cover_image.dart';
 
 /// 单张番剧卡片组件（未设置海报时无缝恢复原生卡片布局与原生高度，设置海报时自适应图文混排）
 class AnimeCard extends StatelessWidget {
@@ -238,36 +239,10 @@ class AnimeCard extends StatelessWidget {
   }
 
   Widget _buildCoverImage(BuildContext context, String url) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: 68,
-        height: 94,
-        color: const Color(0xFF1E2025),
-        child: Image.network(
-          url,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return const Center(
-              child: Icon(
-                Icons.broken_image_outlined,
-                size: 24,
-                color: Color(0xFF71717A),
-              ),
-            );
-          },
-          loadingBuilder: (context, child, progress) {
-            if (progress == null) return child;
-            return const Center(
-              child: SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            );
-          },
-        ),
-      ),
+    return AnimeCoverImage(
+      url: url,
+      width: 68,
+      height: 94,
     );
   }
 

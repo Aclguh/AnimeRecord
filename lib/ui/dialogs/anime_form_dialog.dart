@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/anime_record.dart';
 import '../../models/app_constants.dart';
+import '../widgets/anime_cover_image.dart';
 import '../widgets/confirm_dialog.dart';
 
 /// 添加 / 编辑番剧模态弹窗（支持封面输入预览、标签选择、评分调节与键盘安全适配）
@@ -416,22 +417,10 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                               ),
                               if (_coverUrlController.text.trim().isNotEmpty) ...[
                                 const SizedBox(width: 10),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Container(
-                                    width: 48,
-                                    height: 48,
-                                    color: isDark ? const Color(0xFF1E2025) : const Color(0xFFE4E4E7),
-                                    child: Image.network(
-                                      _coverUrlController.text.trim(),
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) => const Icon(
-                                        Icons.broken_image_outlined,
-                                        size: 20,
-                                        color: Color(0xFF71717A),
-                                      ),
-                                    ),
-                                  ),
+                                AnimeCoverImage(
+                                  url: _coverUrlController.text.trim(),
+                                  width: 48,
+                                  height: 48,
                                 ),
                               ],
                             ],

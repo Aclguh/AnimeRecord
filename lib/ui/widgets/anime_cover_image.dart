@@ -1,0 +1,73 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+
+/// 具备持久化磁盘缓存与自适应占位态的番剧封面图片组件
+class AnimeCoverImage extends StatelessWidget {
+  final String url;
+  final double? width;
+  final double? height;
+  final BorderRadius? borderRadius;
+  final BoxFit fit;
+
+  const AnimeCoverImage({
+    super.key,
+    required this.url,
+    this.width,
+    this.height,
+    this.borderRadius,
+    this.fit = BoxFit.cover,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cleanUrl = url.trim();
+    final effectiveRadius = borderRadius ?? BorderRadius.circular(8);
+
+    if (cleanUrl.isEmpty) {
+      return ClipRRect(
+        borderRadius: effectiveRadius,
+        child: Container(
+          width: width,
+          height: height,
+          color: const Color(0xFF1E2025),
+          child: const Center(
+            child: Icon(
+              Icons.movie_outlined,
+              size: 24,
+              color: Color(0xFF71717A),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: effectiveRadius,
+      child: Container(
+        width: width,
+        height: height,
+        color: const Color(0xFF1E2025),
+        child: CachedNetworkImage(
+          imageUrl: cleanUrl,
+          fit: fit,
+          maxHeightDiskCache: 600,
+          maxWidthDiskCache: 450,
+          placeholder: (context, url) => const Center(
+            child: SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+          errorWidget: (context, url, error) => const Center(
+            child: Icon(
+              Icons.broken_image_outlined,
+              size: 24,
+              color: Color(0xFF71717A),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
