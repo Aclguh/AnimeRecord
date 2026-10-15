@@ -4,6 +4,8 @@ import '../../models/anime_record.dart';
 import '../../models/app_constants.dart';
 import '../widgets/anime_cover_image.dart';
 import '../widgets/confirm_dialog.dart';
+import 'form/rating_picker_section.dart';
+import 'form/tag_selector_section.dart';
 
 /// 添加 / 编辑番剧模态弹窗（支持封面输入预览、标签选择、评分调节与键盘安全适配）
 class AnimeFormDialog extends StatefulWidget {
@@ -48,7 +50,6 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
   late TextEditingController _epWatchedController;
   late TextEditingController _epTotalController;
   late TextEditingController _notesController;
-  late TextEditingController _customTagController;
 
   late String _status;
   late String _week;
@@ -73,7 +74,6 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
       text: rec != null ? '${rec.episodesTotal}' : '0',
     );
     _notesController = TextEditingController(text: rec?.notes ?? '');
-    _customTagController = TextEditingController();
 
     _status = rec?.status ?? AnimeStatus.wantToWatch;
     _week = rec?.week ?? '';
@@ -99,7 +99,6 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
     _epWatchedController.dispose();
     _epTotalController.dispose();
     _notesController.dispose();
-    _customTagController.dispose();
     super.dispose();
   }
 
@@ -162,30 +161,9 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
     }
   }
 
-  void _toggleTag(String tag) {
-    setState(() {
-      if (_tags.contains(tag)) {
-        _tags.remove(tag);
-      } else {
-        _tags.add(tag);
-      }
-    });
-  }
-
-  void _addCustomTag() {
-    final t = _customTagController.text.trim();
-    if (t.isNotEmpty && !_tags.contains(t)) {
-      setState(() {
-        _tags.add(t);
-        _customTagController.clear();
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final isEditing = widget.initialRecord != null;
 
     return Dialog(
@@ -435,82 +413,19 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                             ),
                           ),
                           const SizedBox(height: 14),
-                          // 标签芯片选择器
+                          // 标签选择器
                           _buildLabel('标签 (点击选择或添加)'),
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            children: [
-                              ...kPresetTags.map((tag) {
-                                final isSelected = _tags.contains(tag);
-                                return FilterChip(
-                                  label: Text(tag, style: const TextStyle(fontSize: 12)),
-                                  selected: isSelected,
-                                  onSelected: (_) => _toggleTag(tag),
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                );
-                              }),
-                              ..._tags.where((t) => !kPresetTags.contains(t)).map((customTag) {
-                                return InputChip(
-                                  label: Text(customTag, style: const TextStyle(fontSize: 12)),
-                                  selected: true,
-                                  onDeleted: () => _toggleTag(customTag),
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                );
-                              }),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: SizedBox(
-                                  height: 38,
-                                  child: TextField(
-                                    controller: _customTagController,
-                                    onSubmitted: (_) => _addCustomTag(),
-                                    decoration: const InputDecoration(
-                                      hintText: '输入自定义标签并按添加',
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              OutlinedButton(
-                                onPressed: _addCustomTag,
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                ),
-                                child: const Text('添加标签'),
-                              ),
-                            ],
+                          TagSelectorSection(
+                            tags: _tags,
+                            onTagsChanged: (newTags) => setState(() => _tags = newTags),
                           ),
                           const SizedBox(height: 14),
+
                           // 评分
                           _buildLabel('评分 (0 - 10)'),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Slider(
-                                  value: _rating,
-                                  min: 0,
-                                  max: 10,
-                                  divisions: 20,
-                                  label: _rating == 0 ? '未评分' : '$_rating 分',
-                                  onChanged: (val) {
-                                    setState(() => _rating = val);
-                                  },
-                                ),
-                              ),
-                              Text(
-                                _rating == 0 ? '未评分' : '$_rating 分',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? const Color(0xFFF4F4F5) : const Color(0xFF18181B),
-                                ),
-                              ),
-                            ],
+                          RatingPickerSection(
+                            rating: _rating,
+                            onRatingChanged: (newRating) => setState(() => _rating = newRating),
                           ),
                           const SizedBox(height: 14),
                           // 备注

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../models/app_constants.dart';
 import '../../services/import_export_service.dart';
 import '../../state/anime_provider.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/toast_overlay.dart';
+import 'settings/backup_restore_section.dart';
+import 'settings/general_settings_section.dart';
+import 'settings/sync_settings_section.dart';
 
-/// 设置弹窗（默认展示分类、GitHub Gist 云同步、本地数据导入导出）
+/// 设置弹窗（采用子模块分治架构：通用偏好、GitHub Gist 云同步、本地导入导出）
 class SettingsDialog extends StatefulWidget {
   final AnimeProvider animeProvider;
 
@@ -35,7 +37,6 @@ class _SettingsDialogState extends State<SettingsDialog> {
 
   final ScrollController _dialogScrollController = ScrollController();
 
-  bool _isTokenVisible = false;
   bool _isTestingSync = false;
   bool _isCreatingGist = false;
 
@@ -259,18 +260,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-
     final borderColor = isDark ? const Color(0xFF262B37) : const Color(0xFFE9EAF0);
-    final isConfigured = widget.animeProvider.syncConfig.isConfigured;
-
-    final statusOptions = [
-      ('all', '全部'),
-      (AnimeStatus.wantToWatch, '想看'),
-      (AnimeStatus.watching, '在看'),
-      (AnimeStatus.watched, '看过'),
-      (AnimeStatus.onHold, '搁置'),
-      (AnimeStatus.dropped, '抛弃'),
-    ];
 
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -304,7 +294,8 @@ class _SettingsDialogState extends State<SettingsDialog> {
                 ],
               ),
               const SizedBox(height: 12),
-              // 主内容滚动区（带上下描边边界与滚动条显示）
+
+              // 主内容滚动区
               Flexible(
                 child: Container(
                   decoration: BoxDecoration(
@@ -323,421 +314,79 @@ class _SettingsDialogState extends State<SettingsDialog> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // 1. 默认打开的页面
-                          _buildSectionHeader('默认打开的页面'),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: statusOptions.map((opt) {
-                              final val = opt.$1;
-                              final label = opt.$2;
-                              final isSelected = _defaultStatus == val;
+                          // 1. 通用偏好设置部分
+                          GeneralSettingsSection(
+                            defaultStatus: _defaultStatus,
+                            onDefaultStatusChanged: (val) {
+                              setState(() => _defaultStatus = val);
+                              widget.animeProvider.setDefaultStatus(val);
+                            },
+                            followScreenRotation: _followScreenSelection,
+                            onFollowScreenRotationChanged: (val) async {
+                              setState(() => _followScreenSelection = val);
+                              await widget.animeProvider.storage.saveFollowScreenRotation(val);
+                              if (!val) {
+                                await SystemChrome.setPreferredOrientations([
+                                  DeviceOrientation.portraitUp,
+                                ]);
+                              } else {
+                                await SystemChrome.setPreferredOrientations([
+                                  DeviceOrientation.portraitUp,
+                                  DeviceOrientation.portraitDown,
+                                  DeviceOrientation.landscapeLeft,
+                                  DeviceOrientation.landscapeRight,
+                                ]);
+                              }
+                            },
+                            borderColor: borderColor,
+                          ),
+                          const SizedBox(height: 20),
+                          Divider(color: borderColor, height: 1),
+                          const SizedBox(height: 20),
 
-                              return InkWell(
-                                onTap: () {
-                                  setState(() => _defaultStatus = val);
-                                  widget.animeProvider.setDefaultStatus(val);
+                          // 2. 云端同步部分
+                          ListenableBuilder(
+                            listenable: widget.animeProvider,
+                            builder: (context, _) {
+                              final provider = widget.animeProvider;
+                              return SyncSettingsSection(
+                                tokenController: _tokenController,
+                                gistIdController: _gistIdController,
+                                autoSync: _autoSync,
+                                onAutoSyncChanged: (val) {
+                                  setState(() => _autoSync = val);
                                 },
-                                borderRadius: BorderRadius.circular(20),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? theme.colorScheme.primary
-                                        : (isDark ? const Color(0xFF1C2029) : const Color(0xFFF1F5F9)),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    label,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                                      color: isSelected
-                                          ? Colors.white
-                                          : (isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430)),
-                                    ),
-                                  ),
-                                ),
+                                isConfigured: provider.syncConfig.isConfigured,
+                                isSyncing: provider.isSyncing,
+                                isTestingSync: _isTestingSync,
+                                isCreatingGist: _isCreatingGist,
+                                lastSyncTime: provider.syncConfig.lastSyncTime,
+                                onTestSync: _testSync,
+                                onCreateGist: _createGist,
+                                onSaveSyncSettings: () => _saveSyncSettings(showToastMessage: true),
+                                onSyncNow: _syncNow,
+                                borderColor: borderColor,
                               );
-                            }).toList(),
+                            },
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '打开应用时默认展示「${statusOptions.firstWhere((e) => e.$1 == _defaultStatus).$2}」分类',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
-                            ),
-                          ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 20),
                           Divider(color: borderColor, height: 1),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 20),
 
-                          // 2. 界面与显示设置（跟随屏幕选择）
-                          _buildSectionHeader('界面与显示'),
-                          const SizedBox(height: 10),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF14171E) : const Color(0xFFFBFBFD),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: borderColor),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '跟随屏幕选择',
-                                        style: TextStyle(
-                                          fontSize: 13.5,
-                                          fontWeight: FontWeight.w600,
-                                          color: isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '允许应用跟随屏幕方向旋转至横屏（默认关闭，保持竖屏锁定）',
-                                        style: TextStyle(
-                                          fontSize: 11.5,
-                                          color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Switch(
-                                  value: _followScreenSelection,
-                                  activeThumbColor: theme.colorScheme.primary,
-                                  onChanged: (val) async {
-                                    setState(() => _followScreenSelection = val);
-                                    await widget.animeProvider.storage.saveFollowScreenRotation(val);
-                                    if (!val) {
-                                      await SystemChrome.setPreferredOrientations([
-                                        DeviceOrientation.portraitUp,
-                                      ]);
-                                    } else {
-                                      await SystemChrome.setPreferredOrientations([
-                                        DeviceOrientation.portraitUp,
-                                        DeviceOrientation.portraitDown,
-                                        DeviceOrientation.landscapeLeft,
-                                        DeviceOrientation.landscapeRight,
-                                      ]);
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          Divider(color: borderColor, height: 1),
-                          const SizedBox(height: 18),
-
-                      // 2. 云端同步 (GitHub Gist)
-                      Row(
-                        children: [
-                          Icon(Icons.cloud_sync_outlined, size: 18, color: theme.colorScheme.primary),
-                          const SizedBox(width: 8),
-                          _buildSectionHeader('云端同步（GitHub Gist）'),
-                          const Spacer(),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: isConfigured
-                                  ? const Color(0xFF10B981).withValues(alpha: 0.15)
-                                  : (isDark ? const Color(0xFF232733) : const Color(0xFFF1F5F9)),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              isConfigured ? '已连接' : '未配置',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
-                                color: isConfigured
-                                    ? const Color(0xFF10B981)
-                                    : (isDark ? const Color(0xFFA8B0C0) : const Color(0xFF59617A)),
-                              ),
-                            ),
+                          // 3. 本地备份与恢复部分
+                          BackupRestoreSection(
+                            onExportData: _handleExportData,
+                            onImportData: _handleImportData,
+                            onExportTemplate: _handleExportTemplate,
+                            borderColor: borderColor,
                           ),
                         ],
                       ),
-                      const SizedBox(height: 14),
-                      // Token 栏
-                      Row(
-                        children: [
-                          _buildFieldLabel('GitHub Token (PAT)'),
-                          const Spacer(),
-                          InkWell(
-                            onTap: () {
-                              Clipboard.setData(const ClipboardData(
-                                text: 'https://github.com/settings/tokens/new?description=anime-record-sync&scopes=gist',
-                              ));
-                              Toast.show(context, 'Token 创建链接已复制到剪贴板', type: ToastType.info);
-                            },
-                            child: Text(
-                              '复制 Token 创建链接 ↗',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: theme.colorScheme.primary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      TextFormField(
-                        controller: _tokenController,
-                        obscureText: !_isTokenVisible,
-                        decoration: InputDecoration(
-                          hintText: 'ghp_... 或 github_pat_...',
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _isTokenVisible
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              size: 18,
-                            ),
-                            onPressed: () {
-                              setState(() => _isTokenVisible = !_isTokenVisible);
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '仅需 gist 读写权限，安全保存在当前设备本地。',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Gist ID 栏
-                      _buildFieldLabel('Gist ID'),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _gistIdController,
-                              decoration: const InputDecoration(
-                                hintText: '如 32 位字符或 Gist 网址',
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          OutlinedButton(
-                            onPressed: _isCreatingGist ? null : _createGist,
-                            child: _isCreatingGist
-                                ? const SizedBox(
-                                    width: 14,
-                                    height: 14,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Text('自动新建 Gist'),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '多台设备填写相同的 Gist ID 即可实现进度互通。',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // 自动同步与测试按钮
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: _autoSync,
-                            onChanged: (val) {
-                              setState(() => _autoSync = val ?? false);
-                            },
-                          ),
-                          const Text('打开应用时自动同步', style: TextStyle(fontSize: 13)),
-                          const Spacer(),
-                          OutlinedButton(
-                            onPressed: _isTestingSync ? null : _testSync,
-                            child: _isTestingSync
-                                ? const SizedBox(
-                                    width: 14,
-                                    height: 14,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Text('测试连接'),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-
-                      // 同步信息操作卡片（换行展示，防止存在同步时间时按钮被挤出屏幕）
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF14171E) : const Color(0xFFFBFBFD),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: borderColor),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  '上次同步：',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    widget.animeProvider.syncConfig.lastSyncTime.isNotEmpty
-                                        ? widget.animeProvider.syncConfig.lastSyncTime
-                                            .replaceFirst('T', ' ')
-                                            .split('.')
-                                            .first
-                                        : '从未同步',
-                                    style: TextStyle(
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.w600,
-                                      color: isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: OutlinedButton(
-                                    onPressed: _saveSyncSettings,
-                                    child: const Text('保存配置'),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: widget.animeProvider.isSyncing ? null : _syncNow,
-                                    icon: widget.animeProvider.isSyncing
-                                        ? const SizedBox(
-                                            width: 14,
-                                            height: 14,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: Colors.white,
-                                            ),
-                                          )
-                                        : const Icon(Icons.sync_rounded, size: 16),
-                                    label: const Text('立即同步'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '🛡️ 安全保障：采用时间戳双向增量合并机制，新设备首次同步优先拉取云端，绝不覆盖已有记录。',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Divider(color: borderColor, height: 1),
-                      const SizedBox(height: 20),
-
-                      // 3. 本地数据管理
-                      Row(
-                        children: [
-                          Icon(Icons.inventory_2_outlined, size: 18, color: theme.colorScheme.primary),
-                          const SizedBox(width: 8),
-                          _buildSectionHeader('本地数据管理'),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          if (constraints.maxWidth < 420) {
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                OutlinedButton.icon(
-                                  onPressed: _handleExportData,
-                                  icon: const Icon(Icons.file_upload_outlined, size: 16),
-                                  label: const Text('导出数据'),
-                                ),
-                                const SizedBox(height: 8),
-                                OutlinedButton.icon(
-                                  onPressed: _handleImportData,
-                                  icon: const Icon(Icons.file_download_outlined, size: 16),
-                                  label: const Text('导入数据'),
-                                ),
-                                const SizedBox(height: 8),
-                                OutlinedButton.icon(
-                                  onPressed: _handleExportTemplate,
-                                  icon: const Icon(Icons.description_outlined, size: 16),
-                                  label: const Text('下载模板'),
-                                ),
-                              ],
-                            );
-                          }
-                          return Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: _handleExportData,
-                                  icon: const Icon(Icons.file_upload_outlined, size: 16),
-                                  label: const Text('导出数据'),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: _handleImportData,
-                                  icon: const Icon(Icons.file_download_outlined, size: 16),
-                                  label: const Text('导入数据'),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: _handleExportTemplate,
-                                  icon: const Icon(Icons.description_outlined, size: 16),
-                                  label: const Text('下载模板'),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '可导出本地 JSON 文件离线存档，或通过下载模板按格式整理番剧批量导入。',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-          const SizedBox(height: 16),
+              const SizedBox(height: 16),
               Align(
                 alignment: Alignment.centerRight,
                 child: ElevatedButton(
@@ -751,28 +400,6 @@ class _SettingsDialogState extends State<SettingsDialog> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 14.5,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
-
-  Widget _buildFieldLabel(String label) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Text(
-      label,
-      style: TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430),
       ),
     );
   }
