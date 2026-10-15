@@ -92,6 +92,33 @@ void main() {
       final tombstones = storage.getTombstones();
       expect(tombstones.containsKey(added.id), isTrue);
     });
+
+    test('recovers from backup snapshot and self-heals when main key is corrupted', () async {
+      final prefs = await SharedPreferences.getInstance();
+      final storage = StorageService(prefs);
+
+      final rec1 = AnimeRecord.createEmpty().copyWith(titleZh: '备份测试番剧1');
+      await storage.saveRecords([rec1]);
+
+      // 再次保存以触发快照机制
+      final rec2 = AnimeRecord.createEmpty().copyWith(titleZh: '备份测试番剧2');
+      await storage.saveRecords([rec1, rec2]);
+
+      expect(prefs.containsKey(StorageService.backupKey), isTrue);
+
+      // 人为破坏主存储数据
+      await prefs.setString(StorageService.storageKey, '{ invalid json corrupted content }');
+
+      // 读取时应触发容灾恢复
+      final restored = storage.loadRecords();
+      expect(restored.length, equals(1));
+      expect(restored.first.titleZh, equals('备份测试番剧1'));
+
+      // 验证自愈修复：主存储应已被重新写入有效内容
+      final healedContent = prefs.getString(StorageService.storageKey);
+      expect(healedContent, isNotNull);
+      expect(healedContent!.contains('备份测试番剧1'), isTrue);
+    });
   });
 
   group('SyncService Bidirectional Merge Tests', () {

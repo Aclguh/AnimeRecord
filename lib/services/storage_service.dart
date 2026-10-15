@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/anime_record.dart';
@@ -8,6 +9,7 @@ import '../models/sync_config.dart';
 /// 本地数据持久化服务（普通数据使用 SharedPreferences，敏感凭据使用硬件级 FlutterSecureStorage）
 class StorageService {
   static const String storageKey = 'anime-record-records';
+  static const String backupKey = 'anime-record-records-backup';
   static const String versionKey = 'anime-record-version';
   static const String tombstonesKey = 'anime-record-tombstones';
   static const String defaultStatusKey = 'anime-record-default-status';
@@ -50,8 +52,9 @@ class StorageService {
           await preferences.remove(syncTokenKey);
         }
       }
-    } catch (_) {
-      // 在不支持 SecureStorage 的特殊虚拟环境回退到普通缓存
+    } catch (e, st) {
+      // 在不支持 SecureStorage 的特殊虚拟环境回退到普通缓存并打印警告
+      debugPrint('StorageService: SecureStorage 初始化异常，回退读取普通缓存: $e\n$st');
       service._cachedToken = preferences.getString(syncTokenKey) ?? '';
     }
 
@@ -62,40 +65,69 @@ class StorageService {
   // 记录 CRUD
   // ============================================
 
-  /// 读取所有记录
-  List<AnimeRecord> loadRecords() {
-    try {
-      final raw = _prefs.getString(storageKey);
-      if (raw == null || raw.trim().isEmpty) return [];
+  List<AnimeRecord> _parseJsonRecords(String raw) {
+    if (raw.trim().isEmpty) return [];
+    final decoded = jsonDecode(raw);
+    if (decoded is! List) return [];
 
-      final decoded = jsonDecode(raw);
-      if (decoded is! List) return [];
-
-      return decoded
-          .map((item) {
-            if (item is Map<String, dynamic>) {
-              return AnimeRecord.fromJson(item);
-            } else if (item is Map) {
-              return AnimeRecord.fromJson(Map<String, dynamic>.from(item));
-            }
-            return null;
-          })
-          .whereType<AnimeRecord>()
-          .toList();
-    } catch (_) {
-      return [];
-    }
+    return decoded
+        .map((item) {
+          if (item is Map<String, dynamic>) {
+            return AnimeRecord.fromJson(item);
+          } else if (item is Map) {
+            return AnimeRecord.fromJson(Map<String, dynamic>.from(item));
+          }
+          return null;
+        })
+        .whereType<AnimeRecord>()
+        .toList();
   }
 
-  /// 保存所有记录
+  /// 读取所有记录（优先从主存储加载，主存储数据损坏时自动尝试从容灾备份快照恢复并自动修复）
+  List<AnimeRecord> loadRecords() {
+    final raw = _prefs.getString(storageKey);
+    if (raw != null && raw.trim().isNotEmpty) {
+      try {
+        return _parseJsonRecords(raw);
+      } catch (e, st) {
+        debugPrint('StorageService: 主存储数据损坏或反序列化失败: $e\n$st\n尝试从容灾备份快照恢复...');
+      }
+    }
+
+    // 尝试从备份快照恢复
+    try {
+      final backupRaw = _prefs.getString(backupKey);
+      if (backupRaw != null && backupRaw.trim().isNotEmpty) {
+        final restored = _parseJsonRecords(backupRaw);
+        if (restored.isNotEmpty) {
+          debugPrint('StorageService: 成功从备份快照恢复 ${restored.length} 条记录，正在自愈修复主存储...');
+          _prefs.setString(storageKey, backupRaw);
+          return restored;
+        }
+      }
+    } catch (e, st) {
+      debugPrint('StorageService: 备份快照恢复失败: $e\n$st');
+    }
+
+    return [];
+  }
+
+  /// 保存所有记录（在写入新记录前自动保留上一份有效快照作为容灾备份）
   Future<bool> saveRecords(List<AnimeRecord> records) async {
     try {
+      // 1. 若当前主存储存在有效数据，先转存为快照备份
+      final currentRaw = _prefs.getString(storageKey);
+      if (currentRaw != null && currentRaw.trim().isNotEmpty) {
+        await _prefs.setString(backupKey, currentRaw);
+      }
+
       final jsonList = records.map((r) => r.toJson()).toList();
       final raw = jsonEncode(jsonList);
       await _prefs.setString(storageKey, raw);
       await _prefs.setInt(versionKey, dataVersion);
       return true;
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('StorageService: 保存记录失败: $e\n$st');
       return false;
     }
   }
@@ -206,7 +238,9 @@ class StorageService {
   Future<void> saveTombstones(Map<String, String> tombstones) async {
     try {
       await _prefs.setString(tombstonesKey, jsonEncode(tombstones));
-    } catch (_) {}
+    } catch (e, st) {
+      debugPrint('StorageService: 保存墓碑数据失败: $e\n$st');
+    }
   }
 
   Future<void> recordDeletedTombstone(String id) async {
@@ -285,8 +319,8 @@ class StorageService {
 
     try {
       await _secureStorage.write(key: syncTokenKey, value: token);
-    } catch (_) {
-      // 容错处理
+    } catch (e, st) {
+      debugPrint('StorageService: 写入 SecureStorage 失败，回退写入 SharedPreferences: $e\n$st');
       await _prefs.setString(syncTokenKey, token);
     }
 
