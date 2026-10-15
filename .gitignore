@@ -49,4 +49,5 @@ app.*.map.json
 
 # Local agent documentation
 AGENTS.md
+IMPROVEMENTS.md
 
