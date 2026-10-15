@@ -283,4 +283,56 @@ class AnimeRecord {
       return '';
     }
   }
+
+  /// 强类型状态枚举 Getter
+  WatchStatus get watchStatus => WatchStatus.fromValue(status);
+
+  /// 强类型更新日枚举 Getter
+  WeekDayEnum? get weekDayEnum => WeekDayEnum.fromValue(week);
+
+  /// 强类型播放状态枚举 Getter
+  AirStatusEnum? get airStatusEnum => AirStatusEnum.fromValue(airStatus);
+
+  /// 强类型季度枚举 Getter
+  SeasonEnum? get seasonEnum => SeasonEnum.fromValue(season);
+
+  /// 核心领域状态机方法：集数递增并自动触发状态流转（到达总集数标记完成，想看/搁置流转为在看）
+  ({AnimeRecord record, String? statusChangedMessage}) incrementEpisode() {
+    int newWatched = episodesWatched + 1;
+    String newStatus = status;
+    String newEndDate = endDate;
+
+    // 状态自动切换：想看 / 搁置 时点 +1 自动变为在看
+    if (status == AnimeStatus.wantToWatch || status == AnimeStatus.onHold) {
+      newStatus = AnimeStatus.watching;
+    }
+
+    // 达到总集数时自动标记为看过并填补结束日期
+    if (episodesTotal > 0 && newWatched >= episodesTotal) {
+      newStatus = AnimeStatus.watched;
+      if (newEndDate.isEmpty) {
+        newEndDate = DateTime.now().toIso8601String().split('T').first;
+      }
+      newWatched = episodesTotal;
+    }
+
+    final updated = copyWith(
+      episodesWatched: newWatched,
+      status: newStatus,
+      endDate: newEndDate,
+      updatedAt: DateTime.now().toIso8601String(),
+    );
+
+    String? msg;
+    if (newStatus != status) {
+      if (newStatus == AnimeStatus.watched) {
+        msg = '「${updated.titleZh}」已追完';
+      } else if (newStatus == AnimeStatus.watching) {
+        msg = '「${updated.titleZh}」状态已切换为「在看」';
+      }
+    }
+
+    return (record: updated, statusChangedMessage: msg);
+  }
 }
+

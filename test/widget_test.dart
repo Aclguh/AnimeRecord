@@ -73,7 +73,27 @@ void main() {
       expect(restored.episodesWatched, equals(original.episodesWatched));
       expect(restored.episodesTotal, equals(original.episodesTotal));
       expect(restored.tags, equals(original.tags));
+      expect(restored.watchStatus, equals(WatchStatus.watching));
+      expect(restored.weekDayEnum, equals(WeekDayEnum.fri));
+      expect(restored.airStatusEnum, equals(AirStatusEnum.airing));
       expect(restored.notes, equals(original.notes));
+    });
+
+    test('AnimeRecord incrementEpisode transitions status correctly', () {
+      final rec = AnimeRecord.createEmpty().copyWith(
+        titleZh: '测试番剧',
+        status: AnimeStatus.wantToWatch,
+        episodesWatched: 11,
+        episodesTotal: 12,
+      );
+
+      // want_to_watch -> watched (because nextWatched=12 >= total=12)
+      final res = rec.incrementEpisode();
+      expect(res.record.status, equals(AnimeStatus.watched));
+      expect(res.record.watchStatus, equals(WatchStatus.watched));
+      expect(res.record.episodesWatched, equals(12));
+      expect(res.record.endDate.isNotEmpty, isTrue);
+      expect(res.statusChangedMessage, contains('已追完'));
     });
   });
 

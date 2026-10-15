@@ -315,29 +315,8 @@ class AnimeProvider extends ChangeNotifier {
     final index = _records.indexWhere((r) => r.id == id);
     if (index == -1) return (record: null, statusChangedMessage: null);
 
-    final record = _records[index];
-    int newWatched = record.episodesWatched + 1;
-    String newStatus = record.status;
-    String newEndDate = record.endDate;
-
-    // 状态自动切换：想看 / 搁置 时点 +1 自动变为在看
-    if (record.status == AnimeStatus.wantToWatchValue || record.status == AnimeStatus.onHoldValue) {
-      newStatus = AnimeStatus.watchingValue;
-    }
-
-    // 达到总集数时自动标记为看过并填补结束日期
-    if (record.episodesTotal > 0 && newWatched >= record.episodesTotal) {
-      newStatus = AnimeStatus.watchedValue;
-      newEndDate = DateTime.now().toIso8601String().split('T').first;
-      newWatched = record.episodesTotal;
-    }
-
-    final updated = record.copyWith(
-      episodesWatched: newWatched,
-      status: newStatus,
-      endDate: newEndDate,
-      updatedAt: DateTime.now().toIso8601String(),
-    );
+    final result = _records[index].incrementEpisode();
+    final updated = result.record;
 
     // 1. 内存即时更新
     _records[index] = updated;
@@ -347,15 +326,7 @@ class AnimeProvider extends ChangeNotifier {
     // 2. 后台异步持久化
     await storage.saveRecords(_records);
 
-    String? msg;
-    if (newStatus != record.status) {
-      if (newStatus == AnimeStatus.watchedValue) {
-        msg = '「${updated.titleZh}」已追完';
-      } else if (newStatus == AnimeStatus.watchingValue) {
-        msg = '「${updated.titleZh}」状态已切换为「在看」';
-      }
-    }
-    return (record: updated, statusChangedMessage: msg);
+    return (record: updated, statusChangedMessage: result.statusChangedMessage);
   }
 
   /// 拖动重排并持久化可见卡片相对顺序

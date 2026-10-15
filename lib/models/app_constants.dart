@@ -20,9 +20,31 @@ enum WatchStatus {
     }
     return WatchStatus.wantToWatch;
   }
+
+  /// 状态主色调（严格对齐原版网页 style.css 规范：想看蓝 #3B82F6、在看绿 #10B981、看过橙 #F59E0B、搁置灰 #8A94A6、抛弃红 #EF4444）
+  Color getColor({bool isDark = false}) {
+    return switch (this) {
+      wantToWatch => isDark ? const Color(0xFF60A5FA) : const Color(0xFF3B82F6),
+      watching => isDark ? const Color(0xFF34D399) : const Color(0xFF10B981),
+      watched => isDark ? const Color(0xFFFBBF24) : const Color(0xFFF59E0B),
+      onHold => isDark ? const Color(0xFF9AA4B8) : const Color(0xFF8A94A6),
+      dropped => isDark ? const Color(0xFFF87171) : const Color(0xFFEF4444),
+    };
+  }
+
+  /// 状态徽标与背景底色（严格对齐原版网页软底色）
+  Color getSoftColor({bool isDark = false}) {
+    return switch (this) {
+      wantToWatch => isDark ? const Color(0xFF16243D) : const Color(0xFFE8F1FF),
+      watching => isDark ? const Color(0xFF10251D) : const Color(0xFFE6F8F1),
+      watched => isDark ? const Color(0xFF2A2110) : const Color(0xFFFFF5E3),
+      onHold => isDark ? const Color(0xFF232733) : const Color(0xFFEEF1F5),
+      dropped => isDark ? const Color(0xFF2A1517) : const Color(0xFFFFECEC),
+    };
+  }
 }
 
-/// 观看状态常量与样式映射（对齐 AGENTS.md 规范色彩体系）
+/// 观看状态常量与样式映射（兼容桥接抽象类）
 abstract final class AnimeStatus {
   static const String watching = 'watching';
   static const String wantToWatch = 'want_to_watch';
@@ -46,36 +68,13 @@ abstract final class AnimeStatus {
 
   static String getLabel(String status) => WatchStatus.fromValue(status).label;
 
-  static int getOrder(String status) {
-    for (final s in WatchStatus.values) {
-      if (s.value == status) return s.order;
-    }
-    return 99;
-  }
+  static int getOrder(String status) => WatchStatus.fromValue(status).order;
 
-  /// 状态主色调（严格对齐原版网页 style.css 规范：想看蓝 #3B82F6、在看绿 #10B981、看过橙 #F59E0B、搁置灰 #8A94A6、抛弃红 #EF4444）
-  static Color getColor(String status, {bool isDark = false}) {
-    return switch (status) {
-      wantToWatch => isDark ? const Color(0xFF60A5FA) : const Color(0xFF3B82F6), // 想看: 蓝
-      watching => isDark ? const Color(0xFF34D399) : const Color(0xFF10B981),    // 在看: 绿
-      watched => isDark ? const Color(0xFFFBBF24) : const Color(0xFFF59E0B),     // 看过: 琥珀橙
-      onHold => isDark ? const Color(0xFF9AA4B8) : const Color(0xFF8A94A6),      // 搁置: 蓝灰
-      dropped => isDark ? const Color(0xFFF87171) : const Color(0xFFEF4444),     // 抛弃: 红
-      _ => isDark ? const Color(0xFF9AA4B8) : const Color(0xFF8A94A6),
-    };
-  }
+  static Color getColor(String status, {bool isDark = false}) =>
+      WatchStatus.fromValue(status).getColor(isDark: isDark);
 
-  /// 状态徽标与背景底色（严格对齐原版网页软底色）
-  static Color getSoftColor(String status, {bool isDark = false}) {
-    return switch (status) {
-      wantToWatch => isDark ? const Color(0xFF16243D) : const Color(0xFFE8F1FF),
-      watching => isDark ? const Color(0xFF10251D) : const Color(0xFFE6F8F1),
-      watched => isDark ? const Color(0xFF2A2110) : const Color(0xFFFFF5E3),
-      onHold => isDark ? const Color(0xFF232733) : const Color(0xFFEEF1F5),
-      dropped => isDark ? const Color(0xFF2A1517) : const Color(0xFFFFECEC),
-      _ => isDark ? const Color(0xFF1C2029) : const Color(0xFFF1F5F9),
-    };
-  }
+  static Color getSoftColor(String status, {bool isDark = false}) =>
+      WatchStatus.fromValue(status).getSoftColor(isDark: isDark);
 }
 
 /// 更新频率增强枚举 (WeekDayEnum)
@@ -100,6 +99,18 @@ enum WeekDayEnum {
     }
     return null;
   }
+
+  (Color bg, Color fg) get colors {
+    return switch (this) {
+      mon => (const Color(0xFFFEF3C7), const Color(0xFFB45309)),
+      tue => (const Color(0xFFFCE7F3), const Color(0xFFBE185D)),
+      wed => (const Color(0xFFDCFCE7), const Color(0xFF15803D)),
+      thu => (const Color(0xFFFFEDD5), const Color(0xFFC2410C)),
+      fri => (const Color(0xFFDBEAFE), const Color(0xFF1D4ED8)),
+      sat => (const Color(0xFFEDE9FE), const Color(0xFF6D28D9)),
+      sun => (const Color(0xFFFFE4E6), const Color(0xFFBE123C)),
+    };
+  }
 }
 
 /// 更新频率（周几）常量与工具方法
@@ -118,18 +129,8 @@ abstract final class WeekDay {
 
   static String getFullLabel(String? week) => WeekDayEnum.fromValue(week)?.fullLabel ?? '不设置';
 
-  static (Color bg, Color fg) getColors(String? week) {
-    return switch (week) {
-      mon => (const Color(0xFFFEF3C7), const Color(0xFFB45309)),
-      tue => (const Color(0xFFFCE7F3), const Color(0xFFBE185D)),
-      wed => (const Color(0xFFDCFCE7), const Color(0xFF15803D)),
-      thu => (const Color(0xFFFFEDD5), const Color(0xFFC2410C)),
-      fri => (const Color(0xFFDBEAFE), const Color(0xFF1D4ED8)),
-      sat => (const Color(0xFFEDE9FE), const Color(0xFF6D28D9)),
-      sun => (const Color(0xFFFFE4E6), const Color(0xFFBE123C)),
-      _ => (const Color(0xFFF1F5F9), const Color(0xFF475569)),
-    };
-  }
+  static (Color bg, Color fg) getColors(String? week) =>
+      WeekDayEnum.fromValue(week)?.colors ?? (const Color(0xFFF1F5F9), const Color(0xFF475569));
 }
 
 /// 播放状态增强枚举 (AirStatusEnum)
@@ -148,6 +149,13 @@ enum AirStatusEnum {
     }
     return null;
   }
+
+  (Color bg, Color fg) get colors {
+    return switch (this) {
+      airing => (const Color(0xFFCCFBF1), const Color(0xFF0F766E)),
+      finished => (const Color(0xFFE2E8F0), const Color(0xFF475569)),
+    };
+  }
 }
 
 /// 播放状态常量与工具方法
@@ -159,13 +167,8 @@ abstract final class AirStatus {
 
   static String getLabel(String? status) => AirStatusEnum.fromValue(status)?.label ?? '';
 
-  static (Color bg, Color fg) getColors(String? status) {
-    return switch (status) {
-      airing => (const Color(0xFFCCFBF1), const Color(0xFF0F766E)),
-      finished => (const Color(0xFFE2E8F0), const Color(0xFF475569)),
-      _ => (const Color(0xFFF1F5F9), const Color(0xFF475569)),
-    };
-  }
+  static (Color bg, Color fg) getColors(String? status) =>
+      AirStatusEnum.fromValue(status)?.colors ?? (const Color(0xFFF1F5F9), const Color(0xFF475569));
 }
 
 /// 季度枚举 (SeasonEnum)
