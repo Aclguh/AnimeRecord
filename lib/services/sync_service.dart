@@ -164,9 +164,17 @@ class SyncService {
     final String? rawUrl = targetFile['raw_url']?.toString();
 
     if (isTruncated && rawUrl != null && rawUrl.isNotEmpty) {
-      final rawRes = await _client.get(Uri.parse(rawUrl));
+      final parsedUri = Uri.tryParse(rawUrl);
+      if (parsedUri == null ||
+          parsedUri.scheme != 'https' ||
+          (!parsedUri.host.endsWith('githubusercontent.com') && !parsedUri.host.endsWith('github.com'))) {
+        throw Exception('云端截断文件的来源地址不安全: $rawUrl');
+      }
+      final rawRes = await _client.get(parsedUri);
       if (rawRes.statusCode == 200) {
         content = utf8.decode(rawRes.bodyBytes);
+      } else {
+        throw Exception('拉取云端完整截断数据失败 (${rawRes.statusCode})');
       }
     }
 

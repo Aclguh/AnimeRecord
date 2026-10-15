@@ -223,6 +223,12 @@ class AnimeRecord {
     if (airStatus.isNotEmpty && !AirStatus.allValues.contains(airStatus)) {
       return '播放状态取值无效';
     }
+    if (coverUrl.trim().isNotEmpty) {
+      final uri = Uri.tryParse(coverUrl.trim());
+      if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https') || uri.host.isEmpty) {
+        return '封面链接必须是以 http:// 或 https:// 开头的有效网址';
+      }
+    }
     if (episodesTotal > 0 && episodesWatched > episodesTotal) {
       return '已看集数不能超过总集数';
     }

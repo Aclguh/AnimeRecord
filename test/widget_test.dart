@@ -35,6 +35,12 @@ void main() {
 
       final invalidEp = valid.copyWith(episodesWatched: 15, episodesTotal: 10);
       expect(invalidEp.validate(), equals('已看集数不能超过总集数'));
+
+      final invalidUrl = valid.copyWith(coverUrl: 'javascript:alert(1)');
+      expect(invalidUrl.validate(), equals('封面链接必须是以 http:// 或 https:// 开头的有效网址'));
+
+      final validUrl = valid.copyWith(coverUrl: 'https://example.com/cover.jpg');
+      expect(validUrl.validate(), isNull);
     });
 
     test('JSON serialization & deserialization works seamlessly', () {
