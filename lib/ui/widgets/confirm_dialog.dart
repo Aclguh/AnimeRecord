@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 
 /// 统一风格的确认操作弹窗
 class ConfirmDialog extends StatelessWidget {
@@ -83,7 +84,7 @@ class ConfirmDialog extends StatelessWidget {
                 children: [
                   OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(false),
-                    child: Text(cancelText),
+                    child: Text(cancelText == '取消' ? (context.l10nOrNull?.cancel ?? cancelText) : cancelText),
                   ),
                   if (extraActions != null) ...[
                     const SizedBox(width: 8),
@@ -98,7 +99,7 @@ class ConfirmDialog extends StatelessWidget {
                           )
                         : null,
                     onPressed: () => Navigator.of(context).pop(true),
-                    child: Text(confirmText),
+                    child: Text(confirmText == '确认' ? (context.l10nOrNull?.confirm ?? confirmText) : confirmText),
                   ),
                 ],
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import '../../models/app_constants.dart';
 
 /// 统计概览栏组件（共收录、已观看集数、各状态数量）
@@ -25,12 +26,13 @@ class StatsBar extends StatelessWidget {
     final pillText = isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430);
     final labelColor = isDark ? const Color(0xFFA8B0C0) : const Color(0xFF59617A);
 
+    final l10n = context.l10nOrNull;
     final statuses = [
-      (AnimeStatus.wantToWatch, '想看'),
-      (AnimeStatus.watching, '在看'),
-      (AnimeStatus.watched, '看过'),
-      (AnimeStatus.onHold, '搁置'),
-      (AnimeStatus.dropped, '抛弃'),
+      (AnimeStatus.wantToWatch, l10n?.statusWantToWatch ?? '想看'),
+      (AnimeStatus.watching, l10n?.statusWatching ?? '在看'),
+      (AnimeStatus.watched, l10n?.statusWatched ?? '看过'),
+      (AnimeStatus.onHold, l10n?.statusOnHold ?? '搁置'),
+      (AnimeStatus.dropped, l10n?.statusDropped ?? '抛弃'),
     ];
 
     return Container(
@@ -59,7 +61,7 @@ class StatsBar extends StatelessWidget {
             pillText: pillText,
             labelColor: labelColor,
             value: '$totalRecords',
-            label: '共收录',
+            label: l10n?.totalRecords ?? '共收录',
           ),
           // 已观看集数
           _buildSummaryPill(
@@ -67,7 +69,7 @@ class StatsBar extends StatelessWidget {
             pillText: pillText,
             labelColor: labelColor,
             value: '$totalEpisodesWatched',
-            label: '集已观看',
+            label: l10n?.episodesWatched ?? '集已观看',
           ),
           // 各状态数据
           ...statuses.map((item) {

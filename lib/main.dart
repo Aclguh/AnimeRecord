@@ -78,6 +78,7 @@ class _AnimeRecordAppState extends State<AnimeRecordApp> {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: widget.themeProvider.themeMode,
+      locale: const Locale('zh'),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: HomeScreen(

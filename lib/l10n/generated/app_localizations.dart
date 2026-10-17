@@ -152,6 +152,12 @@ abstract class AppLocalizations {
   /// **'确认'**
   String get confirm;
 
+  /// 完成按钮文案
+  ///
+  /// In zh, this message translates to:
+  /// **'完成'**
+  String get done;
+
   /// 统计栏共收录记录数标签
   ///
   /// In zh, this message translates to:
@@ -163,6 +169,18 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'集已观看'**
   String get episodesWatched;
+
+  /// 搜索框占位提示
+  ///
+  /// In zh, this message translates to:
+  /// **'搜索番剧名称、日文名或备注...'**
+  String get searchHint;
+
+  /// 全部状态筛选标签
+  ///
+  /// In zh, this message translates to:
+  /// **'全部'**
+  String get statusAll;
 
   /// 想看状态标签
   ///
@@ -193,6 +211,240 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'抛弃'**
   String get statusDropped;
+
+  /// 默认排序选项
+  ///
+  /// In zh, this message translates to:
+  /// **'默认排序'**
+  String get sortDefault;
+
+  /// 按评分降序排列
+  ///
+  /// In zh, this message translates to:
+  /// **'评分最高'**
+  String get sortRating;
+
+  /// 按观看集数降序排列
+  ///
+  /// In zh, this message translates to:
+  /// **'看最多'**
+  String get sortEpisodes;
+
+  /// 按最近更新时间排序
+  ///
+  /// In zh, this message translates to:
+  /// **'最近更新'**
+  String get sortUpdated;
+
+  /// 空白页主提示
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无番剧记录'**
+  String get emptyStateTitle;
+
+  /// 空白页副提示
+  ///
+  /// In zh, this message translates to:
+  /// **'点击右上角「+」或下方按钮开启追番之旅'**
+  String get emptyStateSubtitle;
+
+  /// 空白页快速添加按钮
+  ///
+  /// In zh, this message translates to:
+  /// **'添加第一部番剧'**
+  String get emptyStateAction;
+
+  /// 卡片快捷加一集按钮
+  ///
+  /// In zh, this message translates to:
+  /// **'+1 集'**
+  String get episodePlusOne;
+
+  /// 快捷标记全部看完按钮
+  ///
+  /// In zh, this message translates to:
+  /// **'看完'**
+  String get finishWatching;
+
+  /// 备注字段
+  ///
+  /// In zh, this message translates to:
+  /// **'备注'**
+  String get notes;
+
+  /// 评分字段
+  ///
+  /// In zh, this message translates to:
+  /// **'评分'**
+  String get rating;
+
+  /// 集数字段
+  ///
+  /// In zh, this message translates to:
+  /// **'集数'**
+  String get episodes;
+
+  /// 每周更新日字段
+  ///
+  /// In zh, this message translates to:
+  /// **'更新日'**
+  String get weekLabel;
+
+  /// 放送状态字段
+  ///
+  /// In zh, this message translates to:
+  /// **'放送状态'**
+  String get airStatusLabel;
+
+  /// 连载中状态
+  ///
+  /// In zh, this message translates to:
+  /// **'连载中'**
+  String get airStatusAiring;
+
+  /// 已完结状态
+  ///
+  /// In zh, this message translates to:
+  /// **'已完结'**
+  String get airStatusFinished;
+
+  /// 未开播状态
+  ///
+  /// In zh, this message translates to:
+  /// **'未开播'**
+  String get airStatusUpcoming;
+
+  /// 星期一
+  ///
+  /// In zh, this message translates to:
+  /// **'周一'**
+  String get weekMon;
+
+  /// 星期二
+  ///
+  /// In zh, this message translates to:
+  /// **'周二'**
+  String get weekTue;
+
+  /// 星期三
+  ///
+  /// In zh, this message translates to:
+  /// **'周三'**
+  String get weekWed;
+
+  /// 星期四
+  ///
+  /// In zh, this message translates to:
+  /// **'周四'**
+  String get weekThu;
+
+  /// 星期五
+  ///
+  /// In zh, this message translates to:
+  /// **'周五'**
+  String get weekFri;
+
+  /// 星期六
+  ///
+  /// In zh, this message translates to:
+  /// **'周六'**
+  String get weekSat;
+
+  /// 星期日
+  ///
+  /// In zh, this message translates to:
+  /// **'周日'**
+  String get weekSun;
+
+  /// 设置中跟随屏幕方向旋转选项
+  ///
+  /// In zh, this message translates to:
+  /// **'跟随屏幕选择'**
+  String get followScreenRotation;
+
+  /// 通用设置标题
+  ///
+  /// In zh, this message translates to:
+  /// **'默认打开的页面'**
+  String get generalSettings;
+
+  /// 云同步分组标题
+  ///
+  /// In zh, this message translates to:
+  /// **'云端同步（GitHub Gist）'**
+  String get cloudSync;
+
+  /// 本地数据管理分组标题
+  ///
+  /// In zh, this message translates to:
+  /// **'本地数据管理'**
+  String get localDataManagement;
+
+  /// 导出本地备份按钮
+  ///
+  /// In zh, this message translates to:
+  /// **'导出数据'**
+  String get exportData;
+
+  /// 导入备份数据按钮
+  ///
+  /// In zh, this message translates to:
+  /// **'导入数据'**
+  String get importData;
+
+  /// 下载批量导入模板按钮
+  ///
+  /// In zh, this message translates to:
+  /// **'下载模板'**
+  String get downloadTemplate;
+
+  /// 测试云同步连通性按钮
+  ///
+  /// In zh, this message translates to:
+  /// **'测试连接'**
+  String get testConnection;
+
+  /// 自动在GitHub新建Gist按钮
+  ///
+  /// In zh, this message translates to:
+  /// **'自动新建 Gist'**
+  String get autoCreateGist;
+
+  /// 上次同步时间前缀
+  ///
+  /// In zh, this message translates to:
+  /// **'上次同步：'**
+  String get lastSync;
+
+  /// 未曾同步过的状态文案
+  ///
+  /// In zh, this message translates to:
+  /// **'从未同步'**
+  String get neverSynced;
+
+  /// 保存云同步配置按钮
+  ///
+  /// In zh, this message translates to:
+  /// **'保存配置'**
+  String get saveConfig;
+
+  /// 立即触发同步按钮
+  ///
+  /// In zh, this message translates to:
+  /// **'立即同步'**
+  String get syncNow;
+
+  /// 删除确认弹窗标题
+  ///
+  /// In zh, this message translates to:
+  /// **'删除番剧'**
+  String get deleteConfirmTitle;
+
+  /// 删除确认弹窗正文
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要删除该番剧记录吗？删除后可在云端同步中同步删除。'**
+  String get deleteConfirmMessage;
 }
 
 class _AppLocalizationsDelegate

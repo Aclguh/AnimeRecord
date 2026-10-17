@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:reorderables/reorderables.dart';
+import '../../l10n/l10n.dart';
 import '../../models/anime_record.dart';
 import '../../models/app_constants.dart';
 import '../../services/import_export_service.dart';
@@ -346,7 +347,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
           const SizedBox(width: 10),
           Text(
-            '看番记录',
+            context.l10nOrNull?.appTitle ?? '看番记录',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -371,7 +372,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.sync_rounded, size: 16),
-              label: const Text('同步'),
+              label: Text(context.l10nOrNull?.sync ?? '同步'),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 minimumSize: Size.zero,
@@ -396,7 +397,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         // 设置按钮
         IconButton(
           onPressed: () => SettingsDialog.show(context, widget.animeProvider),
-          tooltip: '打开设置',
+          tooltip: context.l10nOrNull?.settings ?? '打开设置',
           icon: const Icon(Icons.settings_outlined, size: 20),
         ),
         const SizedBox(width: 12),
@@ -430,7 +431,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
           const SizedBox(height: 18),
           Text(
-            isTotalEmpty ? '还没有番剧记录' : '没有找到符合条件的番剧',
+            isTotalEmpty ? (context.l10nOrNull?.emptyStateTitle ?? '还没有番剧记录') : '没有找到符合条件的番剧',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -440,7 +441,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           const SizedBox(height: 8),
           Text(
             isTotalEmpty
-                ? '点击「添加番剧」开始记录你的追番之旅吧！'
+                ? (context.l10nOrNull?.emptyStateSubtitle ?? '点击「添加番剧」开始记录你的追番之旅吧！')
                 : '没有找到符合条件的番剧，试试调整筛选条件吧！',
             style: TextStyle(
               fontSize: 14,
@@ -452,7 +453,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ElevatedButton.icon(
               onPressed: _openAddDialog,
               icon: const Icon(Icons.add_rounded, size: 18),
-              label: const Text('添加第一部番剧'),
+              label: Text(context.l10nOrNull?.emptyStateAction ?? '添加第一部番剧'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
               ),

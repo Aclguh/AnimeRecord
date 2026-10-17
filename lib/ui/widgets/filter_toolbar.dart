@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import '../../models/app_constants.dart';
 
 /// 顶部工具栏（状态筛选 Tab、带防抖的搜索框、排序下拉、响应式自适应添加番剧按钮）
@@ -67,14 +68,15 @@ class _FilterToolbarState extends State<FilterToolbar> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = context.l10nOrNull;
 
     final filterItems = [
-      ('all', '全部'),
-      (AnimeStatus.wantToWatch, '想看'),
-      (AnimeStatus.watching, '在看'),
-      (AnimeStatus.watched, '看过'),
-      (AnimeStatus.onHold, '搁置'),
-      (AnimeStatus.dropped, '抛弃'),
+      ('all', l10n?.statusAll ?? '全部'),
+      (AnimeStatus.wantToWatch, l10n?.statusWantToWatch ?? '想看'),
+      (AnimeStatus.watching, l10n?.statusWatching ?? '在看'),
+      (AnimeStatus.watched, l10n?.statusWatched ?? '看过'),
+      (AnimeStatus.onHold, l10n?.statusOnHold ?? '搁置'),
+      (AnimeStatus.dropped, l10n?.statusDropped ?? '抛弃'),
     ];
 
     return LayoutBuilder(
@@ -171,7 +173,7 @@ class _FilterToolbarState extends State<FilterToolbar> {
             onChanged: _onInputChanged,
             style: const TextStyle(fontSize: 13.5),
             decoration: InputDecoration(
-              hintText: '搜索番剧...',
+              hintText: l10n?.searchHint ?? '搜索番剧名称、日文名或备注...',
               hintStyle: TextStyle(
                 fontSize: 13,
                 color: isDark ? const Color(0xFF71717A) : const Color(0xFFA1A1AA),
@@ -197,6 +199,11 @@ class _FilterToolbarState extends State<FilterToolbar> {
           ),
         );
 
+        String getSortLabel(String key) => switch (key) {
+          SortOption.defaultSort => l10n?.sortDefault ?? '默认排序',
+          _ => SortOption.labels[key] ?? key,
+        };
+
         final sortDropdown = Container(
           height: 40,
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -218,10 +225,10 @@ class _FilterToolbarState extends State<FilterToolbar> {
               ),
               dropdownColor: isDark ? const Color(0xFF27272A) : Colors.white,
               borderRadius: BorderRadius.circular(12),
-              items: SortOption.labels.entries.map((e) {
+              items: SortOption.labels.keys.map((key) {
                 return DropdownMenuItem(
-                  value: e.key,
-                  child: Text(e.value),
+                  value: key,
+                  child: Text(getSortLabel(key)),
                 );
               }).toList(),
               onChanged: (val) {
@@ -234,7 +241,7 @@ class _FilterToolbarState extends State<FilterToolbar> {
         final addBtn = ElevatedButton.icon(
           onPressed: widget.onAddAnime,
           icon: const Icon(Icons.add_rounded, size: 18),
-          label: const Text('添加番剧'),
+          label: Text(l10n?.addAnime ?? '添加番剧'),
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

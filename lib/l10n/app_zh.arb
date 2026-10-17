@@ -36,6 +36,10 @@
   "@confirm": {
     "description": "确认按钮文案"
   },
+  "done": "完成",
+  "@done": {
+    "description": "完成按钮文案"
+  },
   "totalRecords": "共收录",
   "@totalRecords": {
     "description": "统计栏共收录记录数标签"
@@ -43,6 +47,14 @@
   "episodesWatched": "集已观看",
   "@episodesWatched": {
     "description": "统计栏已观看集数标签"
+  },
+  "searchHint": "搜索番剧名称、日文名或备注...",
+  "@searchHint": {
+    "description": "搜索框占位提示"
+  },
+  "statusAll": "全部",
+  "@statusAll": {
+    "description": "全部状态筛选标签"
   },
   "statusWantToWatch": "想看",
   "@statusWantToWatch": {
@@ -63,5 +75,161 @@
   "statusDropped": "抛弃",
   "@statusDropped": {
     "description": "抛弃状态标签"
+  },
+  "sortDefault": "默认排序",
+  "@sortDefault": {
+    "description": "默认排序选项"
+  },
+  "sortRating": "评分最高",
+  "@sortRating": {
+    "description": "按评分降序排列"
+  },
+  "sortEpisodes": "看最多",
+  "@sortEpisodes": {
+    "description": "按观看集数降序排列"
+  },
+  "sortUpdated": "最近更新",
+  "@sortUpdated": {
+    "description": "按最近更新时间排序"
+  },
+  "emptyStateTitle": "暂无番剧记录",
+  "@emptyStateTitle": {
+    "description": "空白页主提示"
+  },
+  "emptyStateSubtitle": "点击右上角「+」或下方按钮开启追番之旅",
+  "@emptyStateSubtitle": {
+    "description": "空白页副提示"
+  },
+  "emptyStateAction": "添加第一部番剧",
+  "@emptyStateAction": {
+    "description": "空白页快速添加按钮"
+  },
+  "episodePlusOne": "+1 集",
+  "@episodePlusOne": {
+    "description": "卡片快捷加一集按钮"
+  },
+  "finishWatching": "看完",
+  "@finishWatching": {
+    "description": "快捷标记全部看完按钮"
+  },
+  "notes": "备注",
+  "@notes": {
+    "description": "备注字段"
+  },
+  "rating": "评分",
+  "@rating": {
+    "description": "评分字段"
+  },
+  "episodes": "集数",
+  "@episodes": {
+    "description": "集数字段"
+  },
+  "weekLabel": "更新日",
+  "@weekLabel": {
+    "description": "每周更新日字段"
+  },
+  "airStatusLabel": "放送状态",
+  "@airStatusLabel": {
+    "description": "放送状态字段"
+  },
+  "airStatusAiring": "连载中",
+  "@airStatusAiring": {
+    "description": "连载中状态"
+  },
+  "airStatusFinished": "已完结",
+  "@airStatusFinished": {
+    "description": "已完结状态"
+  },
+  "airStatusUpcoming": "未开播",
+  "@airStatusUpcoming": {
+    "description": "未开播状态"
+  },
+  "weekMon": "周一",
+  "@weekMon": {
+    "description": "星期一"
+  },
+  "weekTue": "周二",
+  "@weekTue": {
+    "description": "星期二"
+  },
+  "weekWed": "周三",
+  "@weekWed": {
+    "description": "星期三"
+  },
+  "weekThu": "周四",
+  "@weekThu": {
+    "description": "星期四"
+  },
+  "weekFri": "周五",
+  "@weekFri": {
+    "description": "星期五"
+  },
+  "weekSat": "周六",
+  "@weekSat": {
+    "description": "星期六"
+  },
+  "weekSun": "周日",
+  "@weekSun": {
+    "description": "星期日"
+  },
+  "followScreenRotation": "跟随屏幕选择",
+  "@followScreenRotation": {
+    "description": "设置中跟随屏幕方向旋转选项"
+  },
+  "generalSettings": "默认打开的页面",
+  "@generalSettings": {
+    "description": "通用设置标题"
+  },
+  "cloudSync": "云端同步（GitHub Gist）",
+  "@cloudSync": {
+    "description": "云同步分组标题"
+  },
+  "localDataManagement": "本地数据管理",
+  "@localDataManagement": {
+    "description": "本地数据管理分组标题"
+  },
+  "exportData": "导出数据",
+  "@exportData": {
+    "description": "导出本地备份按钮"
+  },
+  "importData": "导入数据",
+  "@importData": {
+    "description": "导入备份数据按钮"
+  },
+  "downloadTemplate": "下载模板",
+  "@downloadTemplate": {
+    "description": "下载批量导入模板按钮"
+  },
+  "testConnection": "测试连接",
+  "@testConnection": {
+    "description": "测试云同步连通性按钮"
+  },
+  "autoCreateGist": "自动新建 Gist",
+  "@autoCreateGist": {
+    "description": "自动在GitHub新建Gist按钮"
+  },
+  "lastSync": "上次同步：",
+  "@lastSync": {
+    "description": "上次同步时间前缀"
+  },
+  "neverSynced": "从未同步",
+  "@neverSynced": {
+    "description": "未曾同步过的状态文案"
+  },
+  "saveConfig": "保存配置",
+  "@saveConfig": {
+    "description": "保存云同步配置按钮"
+  },
+  "syncNow": "立即同步",
+  "@syncNow": {
+    "description": "立即触发同步按钮"
+  },
+  "deleteConfirmTitle": "删除番剧",
+  "@deleteConfirmTitle": {
+    "description": "删除确认弹窗标题"
+  },
+  "deleteConfirmMessage": "确定要删除该番剧记录吗？删除后可在云端同步中同步删除。",
+  "@deleteConfirmMessage": {
+    "description": "删除确认弹窗正文"
   }
 }

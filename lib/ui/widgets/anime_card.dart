@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import '../../models/anime_record.dart';
 import '../../models/app_constants.dart';
 import '../theme/app_theme.dart';
@@ -147,7 +148,7 @@ class AnimeCard extends StatelessWidget {
                     splashRadius: 16,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                    tooltip: '删除记录',
+                    tooltip: context.l10nOrNull?.deleteAnime ?? '删除记录',
                   ),
                   const Spacer(),
                   // 最后修改时间
@@ -393,9 +394,9 @@ class AnimeCard extends StatelessWidget {
             ),
           ],
         ),
-        child: const Text(
-          '+1 集',
-          style: TextStyle(
+        child: Text(
+          context.l10nOrNull?.episodePlusOne ?? '+1 集',
+          style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.bold,
             color: Colors.white,
