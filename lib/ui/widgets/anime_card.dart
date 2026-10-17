@@ -3,6 +3,10 @@ import '../../models/anime_record.dart';
 import '../../models/app_constants.dart';
 import '../theme/app_theme.dart';
 import 'anime_cover_image.dart';
+import 'badges/anime_air_status_badge.dart';
+import 'badges/anime_rating_badge.dart';
+import 'badges/anime_status_badge.dart';
+import 'badges/anime_week_badge.dart';
 
 /// 单张番剧卡片组件（未设置海报时无缝恢复原生卡片布局与原生高度，设置海报时自适应图文混排）
 class AnimeCard extends StatelessWidget {
@@ -188,16 +192,20 @@ class AnimeCard extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             // 状态徽标
-            _buildStatusBadge(record.status, statusColor, statusSoftColor),
+            AnimeStatusBadge(
+              status: record.status,
+              color: statusColor,
+              softColor: statusSoftColor,
+            ),
             // 更新日徽标
             if (record.week.isNotEmpty && WeekDay.order.contains(record.week))
-              _buildWeekBadge(record.week),
+              AnimeWeekBadge(week: record.week),
             // 播放状态徽标
             if (record.airStatus.isNotEmpty && AirStatus.allValues.contains(record.airStatus))
-              _buildAirStatusBadge(record.airStatus),
+              AnimeAirStatusBadge(airStatus: record.airStatus),
             // 评分徽标
             if (record.rating > 0)
-              _buildRatingBadge(record.rating, isDark),
+              AnimeRatingBadge(rating: record.rating, isDark: isDark),
           ],
         ),
         SizedBox(height: compact ? 8 : 12),
@@ -247,126 +255,7 @@ class AnimeCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusBadge(String status, Color color, Color softColor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: softColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 5),
-          Text(
-            AnimeStatus.getLabel(status),
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildWeekBadge(String week) {
-    final (bg, fg) = WeekDay.getColors(week);
-    return Tooltip(
-      message: '更新频率：${WeekDay.getFullLabel(week)}',
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.calendar_today_outlined, size: 11, color: fg),
-            const SizedBox(width: 4),
-            Text(
-              WeekDay.getLabel(week),
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: fg,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAirStatusBadge(String airStatus) {
-    final (bg, fg) = AirStatus.getColors(airStatus);
-    final isFinished = airStatus == AirStatus.finished;
-
-    return Tooltip(
-      message: '播放状态：${AirStatus.getLabel(airStatus)}',
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isFinished ? Icons.check_circle_outline_rounded : Icons.sensors_rounded,
-              size: 11,
-              color: fg,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              AirStatus.getLabel(airStatus),
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: fg,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRatingBadge(double rating, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF332713) : const Color(0xFFFFF7ED),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.star_rounded, size: 13, color: Color(0xFFF59E0B)),
-          const SizedBox(width: 3),
-          Text(
-            rating.toStringAsFixed(1),
-            style: const TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFFF59E0B),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildEpisodeSection(BuildContext context, bool isCompleted) {
     final theme = Theme.of(context);
