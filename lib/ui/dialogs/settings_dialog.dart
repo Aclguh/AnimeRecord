@@ -158,7 +158,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
   Future<void> _handleExportData() async {
     try {
       final records = widget.animeProvider.allRecords;
-      final jsonStr = ImportExportService.exportToJson(records);
+      final jsonStr = await ImportExportService.exportToJsonAsync(records);
       final filename =
           'anime-record-backup-${DateTime.now().toIso8601String().split('T').first.replaceAll('-', '')}.json';
 
@@ -198,7 +198,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
       final jsonStr = await ImportExportService.pickJsonFile();
       if (jsonStr == null || jsonStr.trim().isEmpty) return;
 
-      final incoming = ImportExportService.parseImportJson(jsonStr);
+      final incoming = await ImportExportService.parseImportJsonAsync(jsonStr);
       final current = widget.animeProvider.allRecords;
 
       bool replaceMode = false;

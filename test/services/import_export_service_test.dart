@@ -95,5 +95,23 @@ void main() {
       expect(res.records.length, 2);
       expect(res.records.any((r) => r.titleZh == '幸运星'), isTrue);
     });
+
+    test('exportToJsonAsync and parseImportJsonAsync perform correctly in async isolate', () async {
+      final records = [
+        AnimeRecord(
+          id: 'iso_1',
+          titleZh: '紫罗兰永恒花园',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+        ),
+      ];
+
+      final jsonStr = await ImportExportService.exportToJsonAsync(records);
+      expect(jsonStr.contains('紫罗兰永恒花园'), isTrue);
+
+      final parsed = await ImportExportService.parseImportJsonAsync(jsonStr);
+      expect(parsed.length, 1);
+      expect(parsed.first.titleZh, '紫罗兰永恒花园');
+    });
   });
 }

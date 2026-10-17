@@ -184,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _handleExportShortcut() async {
-    final jsonStr = ImportExportService.exportToJson(widget.animeProvider.allRecords);
+    final jsonStr = await ImportExportService.exportToJsonAsync(widget.animeProvider.allRecords);
     final filename =
         'anime-record-backup-${DateTime.now().toIso8601String().split('T').first.replaceAll('-', '')}.json';
     final path = await ImportExportService.saveJsonFile(filename: filename, content: jsonStr);

@@ -16,6 +16,11 @@ class ImportExportService {
     return const JsonEncoder.withIndent('  ').convert(exportObj);
   }
 
+  /// 异步导出为 JSON 字符串（在后台 Isolate 执行，防止大批量记录序列化阻塞主线程）
+  static Future<String> exportToJsonAsync(List<AnimeRecord> records) {
+    return compute(exportToJson, records);
+  }
+
   /// 导出导入模板 JSON 字符串
   static String exportTemplateJson() {
     final template = {
@@ -102,6 +107,11 @@ class ImportExportService {
     }
 
     return valid;
+  }
+
+  /// 异步解析待导入的 JSON 内容（在后台 Isolate 执行，防止大文件反序列化阻塞主线程）
+  static Future<List<AnimeRecord>> parseImportJsonAsync(String jsonString) {
+    return compute(parseImportJson, jsonString);
   }
 
   /// 合并导入（根据 titleZh 去重）
