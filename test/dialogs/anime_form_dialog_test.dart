@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:anime_record/models/anime_record.dart';
 import 'package:anime_record/models/app_constants.dart';
 import 'package:anime_record/ui/dialogs/anime_form_dialog.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 Widget _wrapDialog(Widget child) {
   return MaterialApp(
@@ -70,7 +70,7 @@ void main() {
     });
 
     testWidgets('renders edit mode with initialRecord and triggers onDelete', (tester) async {
-      final initial = AnimeRecord(
+      const initial = AnimeRecord(
         id: 'edit_1',
         titleZh: '命运石之门',
         episodesWatched: 12,
@@ -110,7 +110,7 @@ void main() {
     });
 
     testWidgets('automatically marks as watched when episodes watched reaches total', (tester) async {
-      final initial = AnimeRecord(
+      const initial = AnimeRecord(
         id: 'auto_watch_1',
         titleZh: '间谍过家家',
         episodesWatched: 11,

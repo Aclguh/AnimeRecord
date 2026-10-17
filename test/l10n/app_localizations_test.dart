@@ -1,6 +1,6 @@
+import 'package:anime_record/l10n/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:anime_record/l10n/l10n.dart';
 
 void main() {
   group('AppLocalizations Multi-language Verification', () {

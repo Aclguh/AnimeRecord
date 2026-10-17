@@ -1,8 +1,8 @@
+import 'package:anime_record/services/storage_service.dart';
+import 'package:anime_record/state/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:anime_record/services/storage_service.dart';
-import 'package:anime_record/state/theme_provider.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

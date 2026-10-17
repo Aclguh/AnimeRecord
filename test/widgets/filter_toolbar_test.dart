@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:anime_record/models/app_constants.dart';
 import 'package:anime_record/ui/widgets/filter_toolbar.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 Widget _wrap(Widget child) {
   return MaterialApp(

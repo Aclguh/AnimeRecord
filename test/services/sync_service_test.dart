@@ -1,9 +1,10 @@
 import 'dart:convert';
+
+import 'package:anime_record/models/anime_record.dart';
+import 'package:anime_record/services/sync_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:anime_record/models/anime_record.dart';
-import 'package:anime_record/services/sync_service.dart';
 
 AnimeRecord _record({
   required String id,

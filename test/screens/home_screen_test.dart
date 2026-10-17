@@ -1,7 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:anime_record/models/anime_record.dart';
 import 'package:anime_record/models/app_constants.dart';
 import 'package:anime_record/services/storage_service.dart';
@@ -9,6 +5,10 @@ import 'package:anime_record/state/anime_provider.dart';
 import 'package:anime_record/state/theme_provider.dart';
 import 'package:anime_record/ui/dialogs/anime_form_dialog.dart';
 import 'package:anime_record/ui/screens/home_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -59,7 +59,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      final record = AnimeRecord(
+      const record = AnimeRecord(
         id: 'hs_1',
         titleZh: '葬送的芙莉莲',
         status: AnimeStatus.watching,

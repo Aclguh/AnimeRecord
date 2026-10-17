@@ -1,9 +1,9 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:anime_record/models/anime_record.dart';
 import 'package:anime_record/models/app_constants.dart';
 import 'package:anime_record/services/storage_service.dart';
 import 'package:anime_record/state/anime_provider.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

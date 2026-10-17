@@ -1,13 +1,14 @@
 import 'dart:convert';
-import 'package:flutter_test/flutter_test.dart';
+
 import 'package:anime_record/models/anime_record.dart';
 import 'package:anime_record/services/import_export_service.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ImportExportService Tests', () {
     test('exportToJson serializes list of records correctly', () {
       final records = [
-        AnimeRecord(
+        const AnimeRecord(
           id: 'exp_1',
           titleZh: '轻音少女',
           createdAt: '2026-01-01T00:00:00.000Z',
@@ -66,7 +67,7 @@ void main() {
 
     test('mergeImport deduplicates against existing records', () {
       final current = [
-        AnimeRecord(
+        const AnimeRecord(
           id: 'cur_1',
           titleZh: '凉宫春日的忧郁',
           createdAt: '2026-01-01T00:00:00.000Z',
@@ -75,13 +76,13 @@ void main() {
       ];
 
       final incoming = [
-        AnimeRecord(
+        const AnimeRecord(
           id: 'inc_1',
           titleZh: ' 凉宫春日的忧郁 ', // duplicate with whitespace
           createdAt: '2026-01-01T00:00:00.000Z',
           updatedAt: '2026-01-01T00:00:00.000Z',
         ),
-        AnimeRecord(
+        const AnimeRecord(
           id: 'inc_2',
           titleZh: '幸运星',
           createdAt: '2026-01-01T00:00:00.000Z',
@@ -98,7 +99,7 @@ void main() {
 
     test('exportToJsonAsync and parseImportJsonAsync perform correctly in async isolate', () async {
       final records = [
-        AnimeRecord(
+        const AnimeRecord(
           id: 'iso_1',
           titleZh: '紫罗兰永恒花园',
           createdAt: '2026-01-01T00:00:00.000Z',

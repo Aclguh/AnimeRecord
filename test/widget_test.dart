@@ -1,13 +1,13 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:anime_record/main.dart';
 import 'package:anime_record/models/anime_record.dart';
 import 'package:anime_record/models/app_constants.dart';
+import 'package:anime_record/services/import_export_service.dart';
 import 'package:anime_record/services/storage_service.dart';
 import 'package:anime_record/services/sync_service.dart';
-import 'package:anime_record/services/import_export_service.dart';
 import 'package:anime_record/state/anime_provider.dart';
 import 'package:anime_record/state/theme_provider.dart';
-import 'package:anime_record/main.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -44,7 +44,7 @@ void main() {
     });
 
     test('JSON serialization & deserialization works seamlessly', () {
-      final original = AnimeRecord(
+      const original = AnimeRecord(
         id: 'test-id-1',
         titleZh: '葬送的芙莉莲',
         titleJa: '葬送のフリーレン',
@@ -54,7 +54,7 @@ void main() {
         rating: 9.5,
         episodesWatched: 12,
         episodesTotal: 28,
-        tags: const ['奇幻', '冒险'],
+        tags: ['奇幻', '冒险'],
         notes: '很好看',
         createdAt: '2024-01-01T00:00:00.000Z',
         updatedAt: '2024-01-02T00:00:00.000Z',
@@ -151,7 +151,7 @@ void main() {
     test('mergeSyncRecords adopts newer updates and respects tombstones', () {
       final syncService = SyncService();
 
-      final localRec = AnimeRecord(
+      const localRec = AnimeRecord(
         id: '1',
         titleZh: '番剧A',
         episodesWatched: 5,
@@ -159,7 +159,7 @@ void main() {
         updatedAt: '2024-01-01T10:00:00.000Z',
       );
 
-      final remoteRec = AnimeRecord(
+      const remoteRec = AnimeRecord(
         id: '1',
         titleZh: '番剧A',
         episodesWatched: 8,

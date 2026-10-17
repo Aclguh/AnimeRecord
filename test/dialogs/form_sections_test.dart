@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:anime_record/ui/dialogs/form/rating_picker_section.dart';
 import 'package:anime_record/ui/dialogs/form/tag_selector_section.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 Widget _wrap(Widget child) {
   return MaterialApp(

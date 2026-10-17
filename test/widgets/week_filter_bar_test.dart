@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:anime_record/models/app_constants.dart';
 import 'package:anime_record/ui/widgets/week_filter_bar.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('WeekFilterBar Widget Tests', () {
