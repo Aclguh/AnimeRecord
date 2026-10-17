@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:http/http.dart' as http;
 import '../models/anime_record.dart';
 import '../models/sync_config.dart';
@@ -337,10 +338,11 @@ class SyncService {
 
     final mergedRecords = map.values.toList();
 
-    // 4. 断崖骤减保护
-    if (remoteRecords.length >= 5 && mergedRecords.length < remoteRecords.length * 0.4) {
+    // 4. 双向断崖骤减防护（以本地与云端最大基准数量计算，防止误配空 Gist 或异常墓碑冲刷清空数据）
+    final baselineCount = math.max(localRecords.length, remoteRecords.length);
+    if (baselineCount >= 5 && mergedRecords.length < baselineCount * 0.4) {
       throw Exception(
-        '数据安全防护触发：云端原有 ${remoteRecords.length} 部番剧，合并后仅剩 ${mergedRecords.length} 部。为防止数据异常丢失已终止同步。',
+        '数据安全防护触发：原记录基准为 $baselineCount 部，合并后仅剩 ${mergedRecords.length} 部。为防止数据异常丢失已终止同步。',
       );
     }
 

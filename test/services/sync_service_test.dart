@@ -379,5 +379,21 @@ void main() {
         throwsA(predicate((e) => e.toString().contains('数据安全防护触发'))),
       );
     });
+
+    test('triggers bidirectional data cliff protection when local has records and remote drops by > 60%', () {
+      final localRecords = List.generate(
+        10,
+        (i) => _record(id: 'local_$i', titleZh: '本地番剧 $i', updatedAt: '2026-01-01T00:00:00.000Z'),
+      );
+      // Remote is empty or only 1 record, but remote tombstones deleted 9 local records
+      final remoteTombstones = {
+        for (int i = 1; i < 10; i++) 'local_$i': '2026-02-01T00:00:00.000Z',
+      };
+
+      expect(
+        () => service.mergeSyncRecords(localRecords, [], {}, remoteTombstones),
+        throwsA(predicate((e) => e.toString().contains('数据安全防护触发'))),
+      );
+    });
   });
 }
