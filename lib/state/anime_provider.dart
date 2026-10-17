@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/anime_record.dart';
 import '../models/app_constants.dart';
@@ -9,6 +10,9 @@ import '../services/sync_service.dart';
 class AnimeProvider extends ChangeNotifier {
   final IStorageService storage;
   final SyncService _syncService;
+  final Duration saveDebounceDuration;
+
+  Timer? _saveDebounceTimer;
 
   List<AnimeRecord> _records = [];
   String _activeStatus = AnimeStatus.watchingValue;
@@ -31,7 +35,8 @@ class AnimeProvider extends ChangeNotifier {
   AnimeProvider({
     required this.storage,
     SyncService? syncService,
-  }) : _syncService = syncService ?? SyncService() {
+    this.saveDebounceDuration = const Duration(milliseconds: 300),
+  })  : _syncService = syncService ?? SyncService() {
     _init();
   }
 
@@ -49,6 +54,24 @@ class AnimeProvider extends ChangeNotifier {
   bool get isSyncing => _isSyncing;
   SyncConfig get syncConfig => _syncConfig;
   String? get lastErrorMessage => _lastErrorMessage;
+  bool get hasPendingSave => _saveDebounceTimer != null;
+
+  /// 立即刷写所有挂起的防抖写入至持久化存储
+  Future<void> flushPendingSaves() async {
+    if (_saveDebounceTimer != null) {
+      _saveDebounceTimer!.cancel();
+      _saveDebounceTimer = null;
+      await storage.saveRecords(_records);
+    }
+  }
+
+  void _scheduleDebouncedSave() {
+    _saveDebounceTimer?.cancel();
+    _saveDebounceTimer = Timer(saveDebounceDuration, () {
+      _saveDebounceTimer = null;
+      unawaited(storage.saveRecords(_records));
+    });
+  }
 
   void _init() {
     _activeStatus = storage.loadDefaultStatus();
@@ -252,6 +275,8 @@ class AnimeProvider extends ChangeNotifier {
   // ============================================
 
   Future<AnimeRecord?> addRecord(AnimeRecord record) async {
+    await flushPendingSaves();
+
     final now = DateTime.now().toIso8601String();
     final newRecord = record.copyWith(
       createdAt: record.createdAt.isEmpty ? now : record.createdAt,
@@ -271,6 +296,8 @@ class AnimeProvider extends ChangeNotifier {
   }
 
   Future<AnimeRecord?> updateRecord(String id, AnimeRecord data) async {
+    await flushPendingSaves();
+
     final index = _records.indexWhere((r) => r.id == id);
     if (index == -1) return null;
 
@@ -294,6 +321,8 @@ class AnimeProvider extends ChangeNotifier {
   }
 
   Future<bool> deleteRecord(String id) async {
+    await flushPendingSaves();
+
     final index = _records.indexWhere((r) => r.id == id);
     if (index == -1) return false;
 
@@ -310,8 +339,11 @@ class AnimeProvider extends ChangeNotifier {
     return ok;
   }
 
-  /// 快捷 +1 集（业务状态自动流转）
-  Future<({AnimeRecord? record, String? statusChangedMessage})> episodePlusOne(String id) async {
+  /// 快捷 +1 集（业务状态自动流转，支持 300ms 写入防抖）
+  Future<({AnimeRecord? record, String? statusChangedMessage})> episodePlusOne(
+    String id, {
+    bool debounce = true,
+  }) async {
     final index = _records.indexWhere((r) => r.id == id);
     if (index == -1) return (record: null, statusChangedMessage: null);
 
@@ -323,14 +355,21 @@ class AnimeProvider extends ChangeNotifier {
     _invalidateCache();
     notifyListeners();
 
-    // 2. 后台异步持久化
-    await storage.saveRecords(_records);
+    // 2. 存储持久化（若开启防抖则延时批量写入，否则立即同步持久化）
+    if (debounce) {
+      _scheduleDebouncedSave();
+    } else {
+      await flushPendingSaves();
+      await storage.saveRecords(_records);
+    }
 
     return (record: updated, statusChangedMessage: result.statusChangedMessage);
   }
 
   /// 拖动重排并持久化可见卡片相对顺序
   Future<void> reorder(int oldIndex, int newIndex) async {
+    await flushPendingSaves();
+
     if (_sortBy != SortOption.defaultSort) {
       _sortBy = SortOption.defaultSort;
     }
@@ -381,6 +420,8 @@ class AnimeProvider extends ChangeNotifier {
   }
 
   Future<bool> importRecords(List<AnimeRecord> records, {required bool replace}) async {
+    await flushPendingSaves();
+
     if (replace) {
       _records = List.from(records);
     } else {
@@ -417,6 +458,8 @@ class AnimeProvider extends ChangeNotifier {
     if (!_syncConfig.isConfigured) {
       return (success: false, message: '请先配置 GitHub Token 与 Gist ID');
     }
+
+    await flushPendingSaves();
 
     try {
       _isSyncing = true;
@@ -483,6 +526,7 @@ class AnimeProvider extends ChangeNotifier {
 
   /// 自动新建 Gist
   Future<String> autoCreateGist(String token) async {
+    await flushPendingSaves();
     final tombstones = storage.getTombstones();
     final gistId = await _syncService.createSecretGist(token, _records, tombstones);
 
@@ -493,5 +537,15 @@ class AnimeProvider extends ChangeNotifier {
     );
     await setSyncConfig(updated);
     return gistId;
+  }
+
+  @override
+  void dispose() {
+    if (_saveDebounceTimer != null) {
+      _saveDebounceTimer!.cancel();
+      _saveDebounceTimer = null;
+      unawaited(storage.saveRecords(_records));
+    }
+    super.dispose();
   }
 }

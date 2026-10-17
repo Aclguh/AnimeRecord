@@ -293,4 +293,80 @@ void main() {
       expect(provider.activeWeekCounts[WeekDay.mon], equals(2));
     });
   });
+
+  group('AnimeProvider Debounced Save & Flush', () {
+    test('episodePlusOne debounces disk save and flushPendingSaves writes immediately', () async {
+      final record = AnimeRecord.createEmpty().copyWith(
+        titleZh: '防抖测试番剧',
+        status: AnimeStatus.watching,
+        episodesWatched: 1,
+        episodesTotal: 12,
+      );
+      final created = await provider.addRecord(record);
+      expect(created, isNotNull);
+
+      // 连续调用 2 次 episodePlusOne
+      final res1 = await provider.episodePlusOne(created!.id);
+      expect(res1.record!.episodesWatched, equals(2));
+      expect(provider.hasPendingSave, isTrue);
+
+      final res2 = await provider.episodePlusOne(created.id);
+      expect(res2.record!.episodesWatched, equals(3));
+      expect(provider.hasPendingSave, isTrue);
+
+      // 底层存储尚未落盘，仍然为 1
+      final storedBeforeFlush = storageService.loadRecords();
+      expect(storedBeforeFlush.first.episodesWatched, equals(1));
+
+      // 手动触发 flushPendingSaves
+      await provider.flushPendingSaves();
+      expect(provider.hasPendingSave, isFalse);
+
+      // 底层存储已成功写入最新状态 3
+      final storedAfterFlush = storageService.loadRecords();
+      expect(storedAfterFlush.first.episodesWatched, equals(3));
+    });
+
+    test('addRecord automatically flushes pending debounced save before inserting', () async {
+      final initial = await provider.addRecord(
+        AnimeRecord.createEmpty().copyWith(
+          titleZh: '初始番剧',
+          episodesWatched: 5,
+          episodesTotal: 12,
+        ),
+      );
+
+      // 触发一次快捷 +1，产生 pending save
+      await provider.episodePlusOne(initial!.id);
+      expect(provider.hasPendingSave, isTrue);
+
+      // 紧接着添加一部新番剧，应自动刷盘
+      final second = await provider.addRecord(
+        AnimeRecord.createEmpty().copyWith(titleZh: '第二部番剧'),
+      );
+      expect(second, isNotNull);
+      expect(provider.hasPendingSave, isFalse);
+
+      final allInStorage = storageService.loadRecords();
+      expect(allInStorage.length, equals(2));
+      final updatedInitial = allInStorage.firstWhere((r) => r.id == initial.id);
+      expect(updatedInitial.episodesWatched, equals(6));
+    });
+
+    test('dispose cancels pending timer and flushes pending writes to storage', () async {
+      final item = await provider.addRecord(
+        AnimeRecord.createEmpty().copyWith(
+          titleZh: '待销毁前更新番剧',
+          episodesWatched: 1,
+          episodesTotal: 12,
+        ),
+      );
+
+      await provider.episodePlusOne(item!.id);
+      expect(provider.hasPendingSave, isTrue);
+
+      provider.dispose();
+      expect(provider.hasPendingSave, isFalse);
+    });
+  });
 }
