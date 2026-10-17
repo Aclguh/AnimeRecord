@@ -144,5 +144,37 @@ void main() {
       expect(savedRecord!.status, AnimeStatus.watched);
       expect(savedRecord!.endDate.isNotEmpty, isTrue);
     });
+
+    testWidgets('shows validation error when coverUrl is invalid URL', (tester) async {
+      AnimeRecord? savedRecord;
+
+      await tester.pumpWidget(_wrapDialog(
+        AnimeFormDialog(
+          onSave: (record) => savedRecord = record,
+        ),
+      ));
+      await tester.tap(find.text('Open Dialog'));
+      await tester.pumpAndSettle();
+
+      // Enter valid title
+      await tester.enterText(find.byType(TextFormField).first, '合法番剧名');
+
+      // Expand advanced section
+      await tester.tap(find.textContaining('展开更多信息'));
+      await tester.pumpAndSettle();
+
+      // Enter invalid cover url
+      final coverField = find.widgetWithText(TextFormField, 'https://example.com/poster.jpg');
+      await tester.enterText(coverField, 'ftp://invalid-url');
+      await tester.pump();
+
+      // Tap save
+      await tester.tap(find.text('保存'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('封面链接必须是以 http:// 或 https:// 开头的有效网址'), findsOneWidget);
+      expect(savedRecord, isNull);
+    });
   });
 }

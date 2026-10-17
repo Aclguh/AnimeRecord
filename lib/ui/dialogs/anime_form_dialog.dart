@@ -4,6 +4,7 @@ import '../../models/anime_record.dart';
 import '../../models/app_constants.dart';
 import '../widgets/anime_cover_image.dart';
 import '../widgets/confirm_dialog.dart';
+import '../widgets/toast_overlay.dart';
 import 'form/rating_picker_section.dart';
 import 'form/tag_selector_section.dart';
 
@@ -142,6 +143,12 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
       notes: _notesController.text.trim(),
       endDate: endDate,
     );
+
+    final validationError = newOrUpdated.validate();
+    if (validationError != null) {
+      Toast.show(context, validationError, type: ToastType.error);
+      return;
+    }
 
     widget.onSave(newOrUpdated);
     Navigator.of(context).pop();
@@ -388,6 +395,15 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                                 child: TextFormField(
                                   controller: _coverUrlController,
                                   onChanged: (_) => setState(() {}),
+                                  validator: (val) {
+                                    if (val != null && val.trim().isNotEmpty) {
+                                      final uri = Uri.tryParse(val.trim());
+                                      if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https') || uri.host.isEmpty) {
+                                        return '封面链接必须是以 http:// 或 https:// 开头的有效网址';
+                                      }
+                                    }
+                                    return null;
+                                  },
                                   decoration: const InputDecoration(
                                     hintText: 'https://example.com/poster.jpg',
                                   ),
