@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:http/http.dart' as http;
@@ -57,11 +58,13 @@ class SyncService {
     final http.Response res;
     try {
       res = await requestFuture.timeout(const Duration(seconds: 15));
+    } on TimeoutException {
+      throw Exception('GitHub 请求超时，请检查网络连接或代理配置');
     } catch (e) {
       if (e is http.ClientException) {
         throw Exception('网络连接失败，请检查网络环境或代理配置');
       }
-      throw Exception('GitHub 请求超时，请检查网络连接或代理配置');
+      rethrow;
     }
 
     if (res.statusCode == 401) {
@@ -122,7 +125,7 @@ class SyncService {
       '/gists',
       token,
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json; charset=utf-8'},
       body: jsonEncode(payload),
     );
 
