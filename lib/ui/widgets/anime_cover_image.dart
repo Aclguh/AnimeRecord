@@ -41,6 +41,10 @@ class AnimeCoverImage extends StatelessWidget {
       );
     }
 
+    final dpr = MediaQuery.maybeDevicePixelRatioOf(context) ?? 2.0;
+    final memWidth = width != null ? (width! * dpr).round() : 200;
+    final memHeight = height != null ? (height! * dpr).round() : 300;
+
     return ClipRRect(
       borderRadius: effectiveRadius,
       child: Container(
@@ -50,6 +54,8 @@ class AnimeCoverImage extends StatelessWidget {
         child: CachedNetworkImage(
           imageUrl: cleanUrl,
           fit: fit,
+          memCacheWidth: memWidth,
+          memCacheHeight: memHeight,
           maxHeightDiskCache: 600,
           maxWidthDiskCache: 450,
           placeholder: (context, url) => const Center(
