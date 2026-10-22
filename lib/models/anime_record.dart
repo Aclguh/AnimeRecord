@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'app_constants.dart';
 
@@ -334,5 +335,54 @@ class AnimeRecord {
 
     return (record: updated, statusChangedMessage: msg);
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is AnimeRecord &&
+        other.id == id &&
+        other.titleZh == titleZh &&
+        other.titleJa == titleJa &&
+        other.coverUrl == coverUrl &&
+        other.status == status &&
+        other.week == week &&
+        other.airStatus == airStatus &&
+        other.rating == rating &&
+        other.episodesWatched == episodesWatched &&
+        other.episodesTotal == episodesTotal &&
+        listEquals(other.tags, tags) &&
+        other.notes == notes &&
+        other.startDate == startDate &&
+        other.endDate == endDate &&
+        other.year == year &&
+        other.season == season &&
+        other.createdAt == createdAt &&
+        other.updatedAt == updatedAt;
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+        id,
+        titleZh,
+        titleJa,
+        coverUrl,
+        status,
+        week,
+        airStatus,
+        rating,
+        episodesWatched,
+        episodesTotal,
+        Object.hashAll(tags),
+        notes,
+        startDate,
+        endDate,
+        year,
+        season,
+        createdAt,
+        updatedAt,
+      ]);
+
+  @override
+  String toString() => 'AnimeRecord(id: $id, titleZh: $titleZh, status: $status, ep: $episodesWatched/$episodesTotal)';
 }
 

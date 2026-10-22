@@ -95,6 +95,21 @@ void main() {
       expect(res.record.endDate.isNotEmpty, isTrue);
       expect(res.statusChangedMessage, contains('已追完'));
     });
+
+    test('AnimeRecord value equality and hashCode behave correctly', () {
+      final rec1 = AnimeRecord.createEmpty().copyWith(
+        id: 'test_id',
+        titleZh: '测试番剧',
+        tags: ['搞笑', '日常'],
+      );
+      final rec2 = rec1.copyWith();
+      final rec3 = rec1.copyWith(titleZh: '不同标题');
+
+      expect(rec1, equals(rec2));
+      expect(rec1.hashCode, equals(rec2.hashCode));
+      expect(rec1, isNot(equals(rec3)));
+      expect(rec1.toString(), contains('test_id'));
+    });
   });
 
   group('StorageService & Tombstones Tests', () {
