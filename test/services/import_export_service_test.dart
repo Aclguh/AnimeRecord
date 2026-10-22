@@ -114,5 +114,61 @@ void main() {
       expect(parsed.length, 1);
       expect(parsed.first.titleZh, '紫罗兰永恒花园');
     });
+
+    test('pickJsonFile and saveJsonFile work seamlessly with IFilePickerService mock', () async {
+      final fakePicker = FakeFilePickerService(
+        pickResult: '{"records": [{"titleZh": "Mock番剧"}]}',
+        saveResult: '/path/to/backup.json',
+      );
+
+      // 使用自定义 picker 拾取
+      final picked = await ImportExportService.pickJsonFile(picker: fakePicker);
+      expect(picked, isNotNull);
+      expect(picked, contains('Mock番剧'));
+
+      // 使用自定义 picker 保存
+      final savedPath = await ImportExportService.saveJsonFile(
+        filename: 'test.json',
+        content: '{"hello": "world"}',
+        picker: fakePicker,
+      );
+      expect(savedPath, equals('/path/to/backup.json'));
+      expect(fakePicker.lastSavedFilename, equals('test.json'));
+      expect(fakePicker.lastSavedContent, equals('{"hello": "world"}'));
+
+      // 测试用户取消选择
+      final cancelPicker = FakeFilePickerService(pickResult: null, saveResult: null);
+      expect(await ImportExportService.pickJsonFile(picker: cancelPicker), isNull);
+      expect(
+        await ImportExportService.saveJsonFile(
+          filename: 'cancel.json',
+          content: '',
+          picker: cancelPicker,
+        ),
+        isNull,
+      );
+    });
   });
+}
+
+class FakeFilePickerService implements IFilePickerService {
+  final String? pickResult;
+  final String? saveResult;
+  String? lastSavedFilename;
+  String? lastSavedContent;
+
+  FakeFilePickerService({this.pickResult, this.saveResult});
+
+  @override
+  Future<String?> pickJsonText() async => pickResult;
+
+  @override
+  Future<String?> saveJsonFile({
+    required String filename,
+    required String content,
+  }) async {
+    lastSavedFilename = filename;
+    lastSavedContent = content;
+    return saveResult;
+  }
 }

@@ -29,6 +29,37 @@ class SyncConfig {
   }
 
   bool get isConfigured => token.trim().isNotEmpty && gistId.trim().isNotEmpty;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'token': token,
+      'gistId': gistId,
+      'autoSync': autoSync,
+      'lastSyncTime': lastSyncTime,
+    };
+  }
+
+  factory SyncConfig.fromJson(Map<String, dynamic> json) {
+    return SyncConfig(
+      token: json['token'] as String? ?? '',
+      gistId: json['gistId'] as String? ?? '',
+      autoSync: json['autoSync'] as bool? ?? false,
+      lastSyncTime: json['lastSyncTime'] as String? ?? '',
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SyncConfig &&
+          runtimeType == other.runtimeType &&
+          token == other.token &&
+          gistId == other.gistId &&
+          autoSync == other.autoSync &&
+          lastSyncTime == other.lastSyncTime;
+
+  @override
+  int get hashCode => Object.hash(token, gistId, autoSync, lastSyncTime);
 }
 
 /// 同步合并结果

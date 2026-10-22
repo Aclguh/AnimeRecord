@@ -31,6 +31,12 @@ abstract interface class IStorageService {
 
   SyncConfig loadSyncConfig();
   Future<void> saveSyncConfig(SyncConfig config);
+
+  /// 全量导出存储数据（用于平滑迁移或底层数据库迁移导出）
+  Map<String, dynamic> exportAllStorageData();
+
+  /// 全量恢复或迁移存储数据（用于从备份或旧存储引擎平滑迁入）
+  Future<void> importAllStorageData(Map<String, dynamic> data);
 }
 
 /// 本地数据持久化服务（普通数据使用 SharedPreferences，敏感凭据使用硬件级 FlutterSecureStorage）
@@ -384,5 +390,56 @@ class StorageService implements IStorageService {
     await _prefs.setString(syncGistIdKey, config.gistId.trim());
     await _prefs.setBool(syncAutoKey, config.autoSync);
     await _prefs.setString(syncLastTimeKey, config.lastSyncTime);
+  }
+
+  // ============================================
+  // 全量数据平滑迁移与备份支持
+  // ============================================
+
+  @override
+  Map<String, dynamic> exportAllStorageData() {
+    return {
+      'version': dataVersion,
+      'records': loadRecords().map((r) => r.toJson()).toList(),
+      'tombstones': getTombstones(),
+      'defaultStatus': loadDefaultStatus(),
+      'theme': loadTheme(),
+      'locale': loadLocale(),
+      'followScreenRotation': loadFollowScreenRotation(),
+      'syncConfig': loadSyncConfig().toJson(),
+    };
+  }
+
+  @override
+  Future<void> importAllStorageData(Map<String, dynamic> data) async {
+    if (data['records'] is List) {
+      final records = <AnimeRecord>[];
+      for (final item in data['records'] as List) {
+        if (item is Map) {
+          records.add(AnimeRecord.fromJson(Map<String, dynamic>.from(item)));
+        }
+      }
+      await saveRecords(records);
+    }
+    if (data['tombstones'] is Map) {
+      final tombstones = Map<String, String>.from(data['tombstones'] as Map);
+      await saveTombstones(tombstones);
+    }
+    if (data['defaultStatus'] is String) {
+      await saveDefaultStatus(data['defaultStatus'] as String);
+    }
+    if (data['theme'] is String) {
+      await saveTheme(data['theme'] as String);
+    }
+    if (data['locale'] is String) {
+      await saveLocale(data['locale'] as String);
+    }
+    if (data['followScreenRotation'] is bool) {
+      await saveFollowScreenRotation(data['followScreenRotation'] as bool);
+    }
+    if (data['syncConfig'] is Map) {
+      final config = SyncConfig.fromJson(Map<String, dynamic>.from(data['syncConfig'] as Map));
+      await saveSyncConfig(config);
+    }
   }
 }

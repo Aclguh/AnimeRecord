@@ -128,5 +128,41 @@ void main() {
       expect(loaded.lastSyncTime, '2026-03-01T10:00:00.000Z');
       expect(loaded.isConfigured, isTrue);
     });
+
+    test('exportAllStorageData and importAllStorageData performs smooth full backup and restore', () async {
+      final r1 = AnimeRecord.createEmpty().copyWith(id: 'mig_1', titleZh: '平滑迁移测试番剧');
+      await storage.saveRecords([r1]);
+      await storage.saveTheme('light');
+      await storage.saveLocale('en');
+      await storage.saveFollowScreenRotation(true);
+      await storage.saveDefaultStatus(AnimeStatus.watched);
+      await storage.recordDeletedTombstone('tomb_mig_1');
+      await storage.saveSyncConfig(const SyncConfig(token: 'ghp_mig', gistId: 'gist_mig', autoSync: true));
+
+      final exported = storage.exportAllStorageData();
+      expect(exported['version'], equals(StorageService.dataVersion));
+      expect((exported['records'] as List).length, equals(1));
+      expect(exported['theme'], equals('light'));
+      expect(exported['locale'], equals('en'));
+      expect(exported['followScreenRotation'], isTrue);
+      expect(exported['defaultStatus'], equals(AnimeStatus.watched));
+      expect(exported['tombstones'], isNotNull);
+
+      // 创建一个全新的空 storage
+      SharedPreferences.setMockInitialValues({});
+      final newPrefs = await SharedPreferences.getInstance();
+      final newStorage = StorageService(newPrefs);
+      expect(newStorage.loadRecords(), isEmpty);
+
+      // 执行全量迁入
+      await newStorage.importAllStorageData(exported);
+      expect(newStorage.loadRecords().length, equals(1));
+      expect(newStorage.loadRecords().first.titleZh, equals('平滑迁移测试番剧'));
+      expect(newStorage.loadTheme(), equals('light'));
+      expect(newStorage.loadLocale(), equals('en'));
+      expect(newStorage.loadFollowScreenRotation(), isTrue);
+      expect(newStorage.loadDefaultStatus(), equals(AnimeStatus.watched));
+      expect(newStorage.getTombstones().containsKey('tomb_mig_1'), isTrue);
+    });
   });
 }

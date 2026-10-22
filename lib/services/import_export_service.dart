@@ -3,8 +3,55 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import '../models/anime_record.dart';
 
+/// 文件选择与保存抽象接口（便于单元测试 Mock 与跨端文件存储解耦）
+abstract interface class IFilePickerService {
+  Future<String?> pickJsonText();
+  Future<String?> saveJsonFile({
+    required String filename,
+    required String content,
+  });
+}
+
+/// 默认基于 file_picker 插件的文件选择服务实现
+class PlatformFilePickerService implements IFilePickerService {
+  const PlatformFilePickerService();
+
+  @override
+  Future<String?> pickJsonText() async {
+    final file = await FilePicker.pickFile(
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+    );
+
+    if (file == null) return null;
+
+    final bytes = await file.readAsBytes();
+    return utf8.decode(bytes);
+  }
+
+  @override
+  Future<String?> saveJsonFile({
+    required String filename,
+    required String content,
+  }) async {
+    final bytes = Uint8List.fromList(utf8.encode(content));
+    final uri = await FilePicker.saveFile(
+      fileName: filename,
+      bytes: bytes,
+      dialogTitle: '保存备份文件',
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+      mimeType: 'application/json',
+    );
+
+    return uri?.toString();
+  }
+}
+
 /// 导入与导出服务
 class ImportExportService {
+  /// 全局文件选择器实例，测试时可动态替换为 Mock / Fake 实现
+  static IFilePickerService filePicker = const PlatformFilePickerService();
   /// 导出为 JSON 字符串
   static String exportToJson(List<AnimeRecord> records) {
     final exportObj = {
@@ -140,33 +187,21 @@ class ImportExportService {
   }
 
   /// 拾取并读取 JSON 文本
-  static Future<String?> pickJsonFile() async {
-    final file = await FilePicker.pickFile(
-      type: FileType.custom,
-      allowedExtensions: ['json'],
-    );
-
-    if (file == null) return null;
-
-    final bytes = await file.readAsBytes();
-    return utf8.decode(bytes);
+  static Future<String?> pickJsonFile({IFilePickerService? picker}) async {
+    final activePicker = picker ?? filePicker;
+    return await activePicker.pickJsonText();
   }
 
   /// 保存 JSON 文本到文件
   static Future<String?> saveJsonFile({
     required String filename,
     required String content,
+    IFilePickerService? picker,
   }) async {
-    final bytes = Uint8List.fromList(utf8.encode(content));
-    final uri = await FilePicker.saveFile(
-      fileName: filename,
-      bytes: bytes,
-      dialogTitle: '保存备份文件',
-      type: FileType.custom,
-      allowedExtensions: ['json'],
-      mimeType: 'application/json',
+    final activePicker = picker ?? filePicker;
+    return await activePicker.saveJsonFile(
+      filename: filename,
+      content: content,
     );
-
-    return uri?.toString();
   }
 }
