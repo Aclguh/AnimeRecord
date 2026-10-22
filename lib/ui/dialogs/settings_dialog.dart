@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/import_export_service.dart';
+import '../../services/sync_service.dart';
 import '../../state/anime_provider.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/toast_overlay.dart';
@@ -99,9 +100,10 @@ class _SettingsDialogState extends State<SettingsDialog> {
       }
     } catch (e) {
       if (mounted) {
+        final msg = e is SyncException ? e.message : e.toString().replaceFirst('Exception: ', '');
         Toast.show(
           context,
-          '测试失败：${e.toString().replaceFirst('Exception: ', '')}',
+          '测试失败：$msg',
           type: ToastType.error,
         );
       }
@@ -132,9 +134,10 @@ class _SettingsDialogState extends State<SettingsDialog> {
       }
     } catch (e) {
       if (mounted) {
+        final msg = e is SyncException ? e.message : e.toString().replaceFirst('Exception: ', '');
         Toast.show(
           context,
-          '创建 Gist 失败：${e.toString().replaceFirst('Exception: ', '')}',
+          '创建 Gist 失败：$msg',
           type: ToastType.error,
         );
       }
@@ -146,13 +149,37 @@ class _SettingsDialogState extends State<SettingsDialog> {
   Future<void> _syncNow() async {
     _saveSyncSettings(showToastMessage: false);
     final res = await widget.animeProvider.performSync(silent: false);
-    if (mounted) {
-      Toast.show(
+    if (!mounted) return;
+
+    if (res.isCliff) {
+      final confirmForce = await ConfirmDialog.show(
         context,
-        res.message,
-        type: res.success ? ToastType.success : ToastType.error,
+        title: '同步数据保护提醒',
+        message: '检测到云端与本地合并后数据量骤降（原基准为 ${res.baselineCount} 部，合并后仅剩 ${res.mergedCount} 部）。\n\n'
+            '这通常发生在误清空或更换空 Gist 时。若这是您的预期删除操作，请选择「强制覆盖同步」。',
+        confirmText: '强制覆盖同步',
+        cancelText: '取消',
+        isDestructive: true,
       );
+
+      if (confirmForce == true && mounted) {
+        final forceRes = await widget.animeProvider.performSync(silent: false, force: true);
+        if (mounted) {
+          Toast.show(
+            context,
+            forceRes.message,
+            type: forceRes.success ? ToastType.success : ToastType.error,
+          );
+        }
+      }
+      return;
     }
+
+    Toast.show(
+      context,
+      res.message,
+      type: res.success ? ToastType.success : ToastType.error,
+    );
   }
 
   Future<void> _handleExportData() async {

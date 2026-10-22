@@ -175,13 +175,37 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Future<void> _handleSync() async {
     final res = await widget.animeProvider.performSync(silent: false);
-    if (mounted) {
-      Toast.show(
+    if (!mounted) return;
+
+    if (res.isCliff) {
+      final confirmForce = await ConfirmDialog.show(
         context,
-        res.message,
-        type: res.success ? ToastType.success : ToastType.error,
+        title: '同步数据保护提醒',
+        message: '检测到云端与本地合并后数据量骤降（原基准为 ${res.baselineCount} 部，合并后仅剩 ${res.mergedCount} 部）。\n\n'
+            '这通常发生在误清空或更换空 Gist 时。若这是您的预期删除操作，请选择「强制覆盖同步」。',
+        confirmText: '强制覆盖同步',
+        cancelText: '取消',
+        isDestructive: true,
       );
+
+      if (confirmForce == true && mounted) {
+        final forceRes = await widget.animeProvider.performSync(silent: false, force: true);
+        if (mounted) {
+          Toast.show(
+            context,
+            forceRes.message,
+            type: forceRes.success ? ToastType.success : ToastType.error,
+          );
+        }
+      }
+      return;
     }
+
+    Toast.show(
+      context,
+      res.message,
+      type: res.success ? ToastType.success : ToastType.error,
+    );
   }
 
   Future<void> _handleExportShortcut() async {

@@ -5,6 +5,65 @@ import 'package:http/http.dart' as http;
 import '../models/anime_record.dart';
 import '../models/sync_config.dart';
 
+/// 同步业务领域基础异常
+sealed class SyncException implements Exception {
+  final String message;
+  const SyncException(this.message);
+
+  @override
+  String toString() => message;
+}
+
+/// 缺少或未提供 Token
+class SyncTokenMissingException extends SyncException {
+  const SyncTokenMissingException([super.message = '未提供 GitHub Token']);
+}
+
+/// 身份认证失败或 Token 过期
+class SyncAuthException extends SyncException {
+  const SyncAuthException([super.message = 'GitHub Token 无效或已过期，请检查 Token 权限']);
+}
+
+/// 权限不足或限流
+class SyncForbiddenException extends SyncException {
+  const SyncForbiddenException([super.message = 'GitHub API 访问被拒绝或达到速率限制，请检查 Token 的 gist 权限']);
+}
+
+/// 找不到指定 Gist
+class SyncNotFoundException extends SyncException {
+  const SyncNotFoundException([super.message = '未找到指定的云端 Gist，请检查 Gist ID 是否正确']);
+}
+
+/// 网络或请求超时
+class SyncNetworkException extends SyncException {
+  const SyncNetworkException([super.message = 'GitHub 请求超时，请检查网络连接或代理配置']);
+}
+
+/// 通用 API 请求失败
+class SyncApiException extends SyncException {
+  final int statusCode;
+  const SyncApiException(this.statusCode, [String? message])
+      : super(message ?? 'GitHub 请求失败 ($statusCode)');
+}
+
+/// Gist 数据格式损坏
+class SyncDataFormatException extends SyncException {
+  const SyncDataFormatException([super.message = 'Gist 数据格式异常']);
+}
+
+/// 防断崖跌落保护异常（携带基准数与剩余数，支持强制覆盖）
+class SyncCliffException extends SyncException {
+  final int baselineCount;
+  final int mergedCount;
+
+  const SyncCliffException({
+    required this.baselineCount,
+    required this.mergedCount,
+  }) : super(
+          '数据安全防护触发：原记录基准为 $baselineCount 部，合并后仅剩 $mergedCount 部。为防止数据异常丢失已终止同步。',
+        );
+}
+
 /// GitHub Secret Gist 云同步服务
 class SyncService {
   static const String gistDataFilename = 'anime-record-data.json';
@@ -35,7 +94,7 @@ class SyncService {
   }) async {
     final trimmedToken = token.trim();
     if (trimmedToken.isEmpty) {
-      throw Exception('未提供 GitHub Token');
+      throw const SyncTokenMissingException();
     }
 
     final url = endpoint.startsWith('http')
@@ -59,31 +118,31 @@ class SyncService {
     try {
       res = await requestFuture.timeout(const Duration(seconds: 15));
     } on TimeoutException {
-      throw Exception('GitHub 请求超时，请检查网络连接或代理配置');
+      throw const SyncNetworkException('GitHub 请求超时，请检查网络连接或代理配置');
     } catch (e) {
       if (e is http.ClientException) {
-        throw Exception('网络连接失败，请检查网络环境或代理配置');
+        throw SyncNetworkException('网络连接失败: ${e.message}');
       }
       rethrow;
     }
 
     if (res.statusCode == 401) {
-      throw Exception('GitHub Token 无效或已过期，请检查 Token 权限');
+      throw const SyncAuthException();
     }
     if (res.statusCode == 403) {
-      throw Exception('GitHub API 访问被拒绝或达到速率限制，请检查 Token 的 gist 权限');
+      throw const SyncForbiddenException();
     }
     if (res.statusCode == 404) {
-      throw Exception('未找到指定的云端 Gist，请检查 Gist ID 是否正确');
+      throw const SyncNotFoundException();
     }
     if (res.statusCode < 200 || res.statusCode >= 300) {
       try {
         final errJson = jsonDecode(res.body);
-        final msg = errJson['message'] ?? 'GitHub 请求失败 (${res.statusCode})';
-        throw Exception(msg);
+        final msg = errJson['message']?.toString();
+        throw SyncApiException(res.statusCode, msg);
       } catch (e) {
-        if (e is Exception) rethrow;
-        throw Exception('GitHub 请求失败 (${res.statusCode})');
+        if (e is SyncException) rethrow;
+        throw SyncApiException(res.statusCode);
       }
     }
 
@@ -212,8 +271,9 @@ class SyncService {
       }
 
       return (records: records, tombstones: tombstones, updatedAt: updatedAt);
-    } catch (_) {
-      throw Exception('Gist 中的数据不是有效的 JSON 格式');
+    } catch (e) {
+      if (e is SyncException) rethrow;
+      throw const SyncDataFormatException('Gist 中的数据不是有效的 JSON 格式');
     }
   }
 
@@ -225,7 +285,7 @@ class SyncService {
     Map<String, String> tombstones,
   ) async {
     final cleanId = cleanGistId(gistId);
-    if (cleanId.isEmpty) throw Exception('缺少 Gist ID');
+    if (cleanId.isEmpty) throw const SyncNotFoundException('缺少 Gist ID');
 
     final now = DateTime.now().toIso8601String();
     final contentObj = {
@@ -258,8 +318,9 @@ class SyncService {
     List<AnimeRecord> localRecords,
     List<AnimeRecord> remoteRecords,
     Map<String, String> localTombstones,
-    Map<String, String> remoteTombstones,
-  ) {
+    Map<String, String> remoteTombstones, {
+    bool force = false,
+  }) {
     // 1. 合并墓碑（取较新的删除时间）
     final mergedTombstones = Map<String, String>.from(localTombstones);
     for (final entry in remoteTombstones.entries) {
@@ -343,9 +404,10 @@ class SyncService {
 
     // 4. 双向断崖骤减防护（以本地与云端最大基准数量计算，防止误配空 Gist 或异常墓碑冲刷清空数据）
     final baselineCount = math.max(localRecords.length, remoteRecords.length);
-    if (baselineCount >= 5 && mergedRecords.length < baselineCount * 0.4) {
-      throw Exception(
-        '数据安全防护触发：原记录基准为 $baselineCount 部，合并后仅剩 ${mergedRecords.length} 部。为防止数据异常丢失已终止同步。',
+    if (!force && baselineCount >= 5 && mergedRecords.length < baselineCount * 0.4) {
+      throw SyncCliffException(
+        baselineCount: baselineCount,
+        mergedCount: mergedRecords.length,
       );
     }
 

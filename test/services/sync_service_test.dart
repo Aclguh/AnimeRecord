@@ -393,8 +393,30 @@ void main() {
 
       expect(
         () => service.mergeSyncRecords(localRecords, [], {}, remoteTombstones),
-        throwsA(predicate((e) => e.toString().contains('数据安全防护触发'))),
+        throwsA(isA<SyncCliffException>()),
       );
+    });
+
+    test('bypasses data cliff protection when force is true', () {
+      final remoteRecords = List.generate(
+        10,
+        (i) => _record(id: 'remote_$i', titleZh: '番剧 $i', updatedAt: '2026-01-01T00:00:00.000Z'),
+      );
+      final localRecords = [
+        _record(id: 'remote_0', titleZh: '番剧 0', updatedAt: '2026-01-01T00:00:00.000Z'),
+      ];
+      final localTombstones = {
+        for (int i = 1; i < 10; i++) 'remote_$i': '2026-02-01T00:00:00.000Z',
+      };
+
+      final res = service.mergeSyncRecords(
+        localRecords,
+        remoteRecords,
+        localTombstones,
+        {},
+        force: true,
+      );
+      expect(res.mergedRecords.length, 1);
     });
   });
 }

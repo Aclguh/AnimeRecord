@@ -450,13 +450,28 @@ class AnimeProvider extends ChangeNotifier {
   // 云端同步
   // ============================================
 
-  Future<({bool success, String message})> performSync({bool silent = false}) async {
+  Future<({bool success, String message, bool isCliff, int baselineCount, int mergedCount})> performSync({
+    bool silent = false,
+    bool force = false,
+  }) async {
     if (_isSyncing) {
-      return (success: false, message: '同步正在进行中，请稍候...');
+      return (
+        success: false,
+        message: '同步正在进行中，请稍候...',
+        isCliff: false,
+        baselineCount: 0,
+        mergedCount: 0,
+      );
     }
 
     if (!_syncConfig.isConfigured) {
-      return (success: false, message: '请先配置 GitHub Token 与 Gist ID');
+      return (
+        success: false,
+        message: '请先配置 GitHub Token 与 Gist ID',
+        isCliff: false,
+        baselineCount: 0,
+        mergedCount: 0,
+      );
     }
 
     await flushPendingSaves();
@@ -480,6 +495,7 @@ class AnimeProvider extends ChangeNotifier {
         remoteData.records,
         localTombstones,
         remoteData.tombstones,
+        force: force,
       );
 
       // 3. 更新本地内存与持久化
@@ -502,11 +518,32 @@ class AnimeProvider extends ChangeNotifier {
       await setSyncConfig(updatedConfig);
 
       final count = mergeResult.mergedRecords.length;
-      return (success: true, message: '同步成功！共 $count 部番剧已与云端同步');
+      return (
+        success: true,
+        message: '同步成功！共 $count 部番剧已与云端同步',
+        isCliff: false,
+        baselineCount: 0,
+        mergedCount: 0,
+      );
+    } on SyncCliffException catch (cliff) {
+      _lastErrorMessage = cliff.message;
+      return (
+        success: false,
+        message: cliff.message,
+        isCliff: true,
+        baselineCount: cliff.baselineCount,
+        mergedCount: cliff.mergedCount,
+      );
     } catch (err) {
-      final msg = err.toString().replaceFirst('Exception: ', '');
+      final msg = err is SyncException ? err.message : err.toString().replaceFirst('Exception: ', '');
       _lastErrorMessage = msg;
-      return (success: false, message: '同步失败：$msg');
+      return (
+        success: false,
+        message: '同步失败：$msg',
+        isCliff: false,
+        baselineCount: 0,
+        mergedCount: 0,
+      );
     } finally {
       _isSyncing = false;
       notifyListeners();
