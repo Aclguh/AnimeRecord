@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:anime_record/main.dart';
 import 'package:anime_record/models/anime_record.dart';
 import 'package:anime_record/models/app_constants.dart';
@@ -238,6 +239,35 @@ void main() {
       expect(find.text('全部'), findsOneWidget);
       expect(find.text('在看'), findsWidgets);
       expect(find.text('添加番剧'), findsOneWidget);
+    });
+
+    testWidgets('App flushes debounced save on lifecycle paused', (WidgetTester tester) async {
+      final prefs = await SharedPreferences.getInstance();
+      final storage = StorageService(prefs);
+      final animeProvider = AnimeProvider(storage: storage);
+      final themeProvider = ThemeProvider(storage);
+
+      final rec = AnimeRecord.createEmpty().copyWith(titleZh: '生命周期测试番剧');
+      await animeProvider.addRecord(rec);
+
+      await tester.pumpWidget(
+        AnimeRecordApp(
+          animeProvider: animeProvider,
+          themeProvider: themeProvider,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 触发 +1 集（带 300ms 写入防抖）
+      await animeProvider.episodePlusOne(rec.id, debounce: true);
+      expect(animeProvider.hasPendingSave, isTrue);
+
+      // 模拟系统后台暂停事件
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+
+      // 验证防抖计时器已立即刷写落盘
+      expect(animeProvider.hasPendingSave, isFalse);
     });
   });
 }

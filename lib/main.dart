@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -54,14 +55,26 @@ class AnimeRecordApp extends StatefulWidget {
 }
 
 class _AnimeRecordAppState extends State<AnimeRecordApp> {
+  late final AppLifecycleListener _lifecycleListener;
+
   @override
   void initState() {
     super.initState();
     widget.themeProvider.addListener(_onThemeChanged);
+    _lifecycleListener = AppLifecycleListener(
+      onInactive: () => widget.animeProvider.flushPendingSaves(),
+      onPause: () => widget.animeProvider.flushPendingSaves(),
+      onDetach: () => widget.animeProvider.flushPendingSaves(),
+      onExitRequested: () async {
+        await widget.animeProvider.flushPendingSaves();
+        return AppExitResponse.exit;
+      },
+    );
   }
 
   @override
   void dispose() {
+    _lifecycleListener.dispose();
     widget.themeProvider.removeListener(_onThemeChanged);
     super.dispose();
   }
