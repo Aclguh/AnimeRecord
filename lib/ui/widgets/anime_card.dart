@@ -156,7 +156,9 @@ class AnimeCard extends StatelessWidget {
                     Tooltip(
                       message: '最后修改：${record.formatFullUpdatedAt()}',
                       child: Text(
-                        record.formatRelativeUpdatedAt(),
+                        record.formatRelativeUpdatedAt(
+                          locale: Localizations.maybeLocaleOf(context)?.languageCode ?? 'zh',
+                        ),
                         style: TextStyle(
                           fontSize: 11.5,
                           color: isDark ? AppTheme.textMutedDark : AppTheme.textSubDark,

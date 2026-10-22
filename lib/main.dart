@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'services/storage_service.dart';
 import 'state/anime_provider.dart';
+import 'state/locale_provider.dart';
 import 'state/theme_provider.dart';
 import 'ui/screens/home_screen.dart';
 import 'ui/theme/app_theme.dart';
@@ -32,10 +33,12 @@ void main() async {
   // 初始化核心状态管理
   final animeProvider = AnimeProvider(storage: storageService);
   final themeProvider = ThemeProvider(storageService);
+  final localeProvider = LocaleProvider(storageService);
 
   runApp(AnimeRecordApp(
     animeProvider: animeProvider,
     themeProvider: themeProvider,
+    localeProvider: localeProvider,
   ));
 }
 
@@ -43,11 +46,13 @@ void main() async {
 class AnimeRecordApp extends StatefulWidget {
   final AnimeProvider animeProvider;
   final ThemeProvider themeProvider;
+  final LocaleProvider? localeProvider;
 
   const AnimeRecordApp({
     super.key,
     required this.animeProvider,
     required this.themeProvider,
+    this.localeProvider,
   });
 
   @override
@@ -56,11 +61,14 @@ class AnimeRecordApp extends StatefulWidget {
 
 class _AnimeRecordAppState extends State<AnimeRecordApp> {
   late final AppLifecycleListener _lifecycleListener;
+  late final LocaleProvider _effectiveLocaleProvider;
 
   @override
   void initState() {
     super.initState();
+    _effectiveLocaleProvider = widget.localeProvider ?? LocaleProvider(widget.animeProvider.storage);
     widget.themeProvider.addListener(_onThemeChanged);
+    _effectiveLocaleProvider.addListener(_onLocaleChanged);
     _lifecycleListener = AppLifecycleListener(
       onInactive: () => widget.animeProvider.flushPendingSaves(),
       onPause: () => widget.animeProvider.flushPendingSaves(),
@@ -76,10 +84,15 @@ class _AnimeRecordAppState extends State<AnimeRecordApp> {
   void dispose() {
     _lifecycleListener.dispose();
     widget.themeProvider.removeListener(_onThemeChanged);
+    _effectiveLocaleProvider.removeListener(_onLocaleChanged);
     super.dispose();
   }
 
   void _onThemeChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _onLocaleChanged() {
     if (mounted) setState(() {});
   }
 
@@ -91,12 +104,13 @@ class _AnimeRecordAppState extends State<AnimeRecordApp> {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: widget.themeProvider.themeMode,
-      locale: const Locale('zh'),
+      locale: _effectiveLocaleProvider.locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: HomeScreen(
         animeProvider: widget.animeProvider,
         themeProvider: widget.themeProvider,
+        localeProvider: _effectiveLocaleProvider,
       ),
     );
   }

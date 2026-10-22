@@ -236,8 +236,8 @@ class AnimeRecord {
     return null;
   }
 
-  /// 相对修改时间文本描述
-  String formatRelativeUpdatedAt() {
+  /// 相对修改时间文本描述（支持根据当前语言代码格式化输出）
+  String formatRelativeUpdatedAt({String locale = 'zh'}) {
     if (updatedAt.isEmpty) return '';
     try {
       final date = DateTime.tryParse(updatedAt);
@@ -245,23 +245,27 @@ class AnimeRecord {
 
       final now = DateTime.now();
       final diff = now.difference(date);
+      final isEn = locale.startsWith('en');
 
       if (diff.isNegative || diff.inMinutes < 1) {
-        return '刚刚';
+        return isEn ? 'Just now' : '刚刚';
       }
       if (diff.inHours < 1) {
-        return '${diff.inMinutes}分钟前';
+        return isEn ? '${diff.inMinutes}m ago' : '${diff.inMinutes}分钟前';
       }
       if (diff.inDays < 1) {
-        return '${diff.inHours}小时前';
+        return isEn ? '${diff.inHours}h ago' : '${diff.inHours}小时前';
       }
       if (diff.inDays < 3) {
-        return '${diff.inDays}天前';
+        return isEn ? '${diff.inDays}d ago' : '${diff.inDays}天前';
       }
 
       final isSameYear = date.year == now.year;
       final m = date.month;
       final d = date.day;
+      if (isEn) {
+        return isSameYear ? '$m/$d' : '$m/$d/${date.year}';
+      }
       return isSameYear ? '$m月$d日' : '${date.year}年$m月$d日';
     } catch (_) {
       return '';

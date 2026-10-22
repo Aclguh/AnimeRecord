@@ -24,6 +24,8 @@ abstract interface class IStorageService {
   Future<void> saveDefaultStatus(String status);
   String loadTheme();
   Future<void> saveTheme(String theme);
+  String loadLocale();
+  Future<void> saveLocale(String locale);
   bool loadFollowScreenRotation();
   Future<void> saveFollowScreenRotation(bool value);
 
@@ -39,6 +41,7 @@ class StorageService implements IStorageService {
   static const String tombstonesKey = 'anime-record-tombstones';
   static const String defaultStatusKey = 'anime-record-default-status';
   static const String themeKey = 'theme';
+  static const String localeKey = 'anime-record-locale';
 
   static const String syncTokenKey = 'anime-record-sync-token';
   static const String syncGistIdKey = 'anime-record-sync-gist-id';
@@ -328,6 +331,17 @@ class StorageService implements IStorageService {
   @override
   Future<void> saveTheme(String theme) async {
     await _prefs.setString(themeKey, theme);
+  }
+
+  /// 读取语言设置（默认跟随系统 system，可选 zh, en）
+  @override
+  String loadLocale() {
+    return _prefs.getString(localeKey) ?? 'system';
+  }
+
+  @override
+  Future<void> saveLocale(String locale) async {
+    await _prefs.setString(localeKey, locale);
   }
 
   /// 读取跟随屏幕选择/旋转设置（默认关闭）

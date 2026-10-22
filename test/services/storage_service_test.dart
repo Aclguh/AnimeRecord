@@ -102,6 +102,10 @@ void main() {
       await storage.saveTheme('dark');
       expect(storage.loadTheme(), 'dark');
 
+      expect(storage.loadLocale(), 'system');
+      await storage.saveLocale('zh');
+      expect(storage.loadLocale(), 'zh');
+
       expect(storage.loadFollowScreenRotation(), isFalse);
       await storage.saveFollowScreenRotation(true);
       expect(storage.loadFollowScreenRotation(), isTrue);

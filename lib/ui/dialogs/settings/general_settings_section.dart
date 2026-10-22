@@ -7,6 +7,8 @@ class GeneralSettingsSection extends StatelessWidget {
   final ValueChanged<String> onDefaultStatusChanged;
   final bool followScreenRotation;
   final ValueChanged<bool> onFollowScreenRotationChanged;
+  final String? currentLocale;
+  final ValueChanged<String>? onLocaleChanged;
   final Color borderColor;
 
   const GeneralSettingsSection({
@@ -15,6 +17,8 @@ class GeneralSettingsSection extends StatelessWidget {
     required this.onDefaultStatusChanged,
     required this.followScreenRotation,
     required this.onFollowScreenRotationChanged,
+    this.currentLocale,
+    this.onLocaleChanged,
     required this.borderColor,
   });
 
@@ -88,45 +92,98 @@ class GeneralSettingsSection extends StatelessWidget {
         Divider(color: borderColor, height: 1),
         const SizedBox(height: 18),
 
-        // 2. 界面与显示设置（跟随屏幕选择）
+        // 2. 界面与显示设置（跟随屏幕选择与多语言）
         _buildSectionHeader(context, '界面与显示'),
         const SizedBox(height: 10),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF14171E) : const Color(0xFFFBFBFD),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: borderColor),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              if (onLocaleChanged != null) ...[
+                Row(
                   children: [
-                    Text(
-                      '跟随屏幕选择',
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '界面语言',
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '选择应用的展示语言（支持跟随系统或手动切换）',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '允许应用跟随屏幕方向旋转至横屏（默认关闭，保持竖屏锁定）',
+                    DropdownButton<String>(
+                      value: currentLocale ?? 'system',
+                      underline: const SizedBox(),
+                      dropdownColor: isDark ? const Color(0xFF27272A) : Colors.white,
                       style: TextStyle(
-                        fontSize: 11.5,
-                        color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.primary,
                       ),
+                      items: const [
+                        DropdownMenuItem(value: 'system', child: Text('跟随系统')),
+                        DropdownMenuItem(value: 'zh', child: Text('简体中文')),
+                        DropdownMenuItem(value: 'en', child: Text('English')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) onLocaleChanged!(val);
+                      },
                     ),
                   ],
                 ),
-              ),
-              Switch(
-                value: followScreenRotation,
-                activeThumbColor: theme.colorScheme.primary,
-                onChanged: onFollowScreenRotationChanged,
+                Divider(color: borderColor, height: 20),
+              ],
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '跟随屏幕选择',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '允许应用跟随屏幕方向旋转至横屏（默认关闭，保持竖屏锁定）',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: followScreenRotation,
+                    activeThumbColor: theme.colorScheme.primary,
+                    onChanged: onFollowScreenRotationChanged,
+                  ),
+                ],
               ),
             ],
           ),

@@ -1,4 +1,5 @@
 import 'package:anime_record/l10n/l10n.dart';
+import 'package:anime_record/models/anime_record.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -35,6 +36,13 @@ void main() {
       expect(l10n.episodesWatched, equals('集已观看'));
       expect(l10n.cancel, equals('取消'));
       expect(l10n.confirm, equals('确认'));
+      expect(l10n.weekMon, equals('周一'));
+      expect(l10n.weekSun, equals('周日'));
+      expect(l10n.airStatusAiring, equals('连载中'));
+      expect(l10n.airStatusFinished, equals('已完结'));
+      expect(l10n.exportData, equals('导出数据'));
+      expect(l10n.importData, equals('导入数据'));
+      expect(l10n.emptyStateTitle, equals('暂无番剧记录'));
     });
 
     testWidgets('loads and resolves English (en) localization correctly', (tester) async {
@@ -68,6 +76,32 @@ void main() {
       expect(l10n.episodesWatched, equals('eps watched'));
       expect(l10n.cancel, equals('Cancel'));
       expect(l10n.confirm, equals('Confirm'));
+      expect(l10n.weekMon, equals('Mon'));
+      expect(l10n.weekSun, equals('Sun'));
+      expect(l10n.airStatusAiring, equals('Airing'));
+      expect(l10n.airStatusFinished, equals('Finished'));
+      expect(l10n.exportData, equals('Export Data'));
+      expect(l10n.importData, equals('Import Data'));
+      expect(l10n.emptyStateTitle, equals('No Anime Records Yet'));
+    });
+
+    test('AnimeRecord formatRelativeUpdatedAt formats relative time in zh and en', () {
+      final now = DateTime.now();
+      final tenMinutesAgo = now.subtract(const Duration(minutes: 10)).toIso8601String();
+      final twoHoursAgo = now.subtract(const Duration(hours: 2)).toIso8601String();
+      final twoDaysAgo = now.subtract(const Duration(days: 2)).toIso8601String();
+
+      final rec10m = AnimeRecord.createEmpty().copyWith(updatedAt: tenMinutesAgo);
+      expect(rec10m.formatRelativeUpdatedAt(locale: 'zh'), '10分钟前');
+      expect(rec10m.formatRelativeUpdatedAt(locale: 'en'), '10m ago');
+
+      final rec2h = AnimeRecord.createEmpty().copyWith(updatedAt: twoHoursAgo);
+      expect(rec2h.formatRelativeUpdatedAt(locale: 'zh'), '2小时前');
+      expect(rec2h.formatRelativeUpdatedAt(locale: 'en'), '2h ago');
+
+      final rec2d = AnimeRecord.createEmpty().copyWith(updatedAt: twoDaysAgo);
+      expect(rec2d.formatRelativeUpdatedAt(locale: 'zh'), '2天前');
+      expect(rec2d.formatRelativeUpdatedAt(locale: 'en'), '2d ago');
     });
   });
 }

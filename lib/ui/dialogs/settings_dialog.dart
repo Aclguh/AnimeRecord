@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../services/import_export_service.dart';
 import '../../services/sync_service.dart';
 import '../../state/anime_provider.dart';
+import '../../state/locale_provider.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/toast_overlay.dart';
 import 'settings/backup_restore_section.dart';
@@ -12,16 +13,25 @@ import 'settings/sync_settings_section.dart';
 /// 设置弹窗（采用子模块分治架构：通用偏好、GitHub Gist 云同步、本地导入导出）
 class SettingsDialog extends StatefulWidget {
   final AnimeProvider animeProvider;
+  final LocaleProvider? localeProvider;
 
   const SettingsDialog({
     super.key,
     required this.animeProvider,
+    this.localeProvider,
   });
 
-  static Future<void> show(BuildContext context, AnimeProvider provider) {
+  static Future<void> show(
+    BuildContext context,
+    AnimeProvider provider, {
+    LocaleProvider? localeProvider,
+  }) {
     return showDialog(
       context: context,
-      builder: (context) => SettingsDialog(animeProvider: provider),
+      builder: (context) => SettingsDialog(
+        animeProvider: provider,
+        localeProvider: localeProvider,
+      ),
     );
   }
 
@@ -348,6 +358,13 @@ class _SettingsDialogState extends State<SettingsDialog> {
                               setState(() => _defaultStatus = val);
                               widget.animeProvider.setDefaultStatus(val);
                             },
+                            currentLocale: widget.localeProvider?.currentLocaleCode,
+                            onLocaleChanged: widget.localeProvider != null
+                                ? (val) {
+                                    setState(() {});
+                                    widget.localeProvider!.setLocale(val);
+                                  }
+                                : null,
                             followScreenRotation: _followScreenSelection,
                             onFollowScreenRotationChanged: (val) async {
                               setState(() => _followScreenSelection = val);

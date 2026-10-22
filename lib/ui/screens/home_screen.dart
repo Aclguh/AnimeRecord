@@ -6,6 +6,7 @@ import '../../models/anime_record.dart';
 import '../../models/app_constants.dart';
 import '../../services/import_export_service.dart';
 import '../../state/anime_provider.dart';
+import '../../state/locale_provider.dart';
 import '../../state/theme_provider.dart';
 import '../dialogs/anime_form_dialog.dart';
 import '../dialogs/settings_dialog.dart';
@@ -21,11 +22,13 @@ import '../widgets/week_filter_bar.dart';
 class HomeScreen extends StatefulWidget {
   final AnimeProvider animeProvider;
   final ThemeProvider themeProvider;
+  final LocaleProvider? localeProvider;
 
   const HomeScreen({
     super.key,
     required this.animeProvider,
     required this.themeProvider,
+    this.localeProvider,
   });
 
   @override
@@ -350,7 +353,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // 设置按钮
         IconButton(
-          onPressed: () => SettingsDialog.show(context, widget.animeProvider),
+          onPressed: () => SettingsDialog.show(
+            context,
+            widget.animeProvider,
+            localeProvider: widget.localeProvider,
+          ),
           tooltip: context.l10nOrNull?.settings ?? '打开设置',
           icon: const Icon(Icons.settings_outlined, size: 20),
         ),
