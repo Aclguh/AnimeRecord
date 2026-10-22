@@ -89,6 +89,12 @@ class AppTheme {
   static const Color textSubDark = Color(0xFFA1A1AA);
   static const Color textMutedDark = Color(0xFF71717A);
 
+  // 通用功能与状态色彩
+  static const Color successGreen = Color(0xFF10B981);
+  static const Color dangerRed = Color(0xFFEF4444);
+  static const Color warningAmber = Color(0xFFF59E0B);
+  static const Color infoBlue = Color(0xFF3B82F6);
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,

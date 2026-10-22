@@ -271,14 +271,14 @@ class AnimeCard extends StatelessWidget {
       if (isCompleted || remaining <= 0) {
         return Row(
           children: [
-            const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF10B981)),
+            const Icon(Icons.check_circle_rounded, size: 14, color: AppTheme.successGreen),
             const SizedBox(width: 5),
             Text(
               '已完成 ${record.episodesTotal} 集',
               style: const TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF10B981),
+                color: AppTheme.successGreen,
               ),
             ),
           ],
@@ -357,20 +357,20 @@ class AnimeCard extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: const Color(0xFF10B981).withValues(alpha: 0.12),
+          color: AppTheme.successGreen.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(8),
         ),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.check_rounded, size: 14, color: Color(0xFF10B981)),
+            Icon(Icons.check_rounded, size: 14, color: AppTheme.successGreen),
             SizedBox(width: 4),
             Text(
               '已追完',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF10B981),
+                color: AppTheme.successGreen,
               ),
             ),
           ],

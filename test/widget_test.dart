@@ -6,6 +6,7 @@ import 'package:anime_record/services/import_export_service.dart';
 import 'package:anime_record/services/storage_service.dart';
 import 'package:anime_record/services/sync_service.dart';
 import 'package:anime_record/state/anime_provider.dart';
+import 'package:anime_record/state/locale_provider.dart';
 import 'package:anime_record/state/theme_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -226,11 +227,14 @@ void main() {
       final storage = StorageService(prefs);
       final animeProvider = AnimeProvider(storage: storage);
       final themeProvider = ThemeProvider(storage);
+      final localeProvider = LocaleProvider(storage);
+      await localeProvider.setLocale('zh');
 
       await tester.pumpWidget(
         AnimeRecordApp(
           animeProvider: animeProvider,
           themeProvider: themeProvider,
+          localeProvider: localeProvider,
         ),
       );
       await tester.pumpAndSettle();
@@ -241,11 +245,36 @@ void main() {
       expect(find.text('添加番剧'), findsOneWidget);
     });
 
+    testWidgets('App renders Home screen in English when locale is set to en', (WidgetTester tester) async {
+      final prefs = await SharedPreferences.getInstance();
+      final storage = StorageService(prefs);
+      final animeProvider = AnimeProvider(storage: storage);
+      final themeProvider = ThemeProvider(storage);
+      final localeProvider = LocaleProvider(storage);
+      await localeProvider.setLocale('en');
+
+      await tester.pumpWidget(
+        AnimeRecordApp(
+          animeProvider: animeProvider,
+          themeProvider: themeProvider,
+          localeProvider: localeProvider,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Anime Record'), findsOneWidget);
+      expect(find.text('All'), findsOneWidget);
+      expect(find.text('Watching'), findsWidgets);
+      expect(find.text('Add Anime'), findsOneWidget);
+    });
+
     testWidgets('App flushes debounced save on lifecycle paused', (WidgetTester tester) async {
       final prefs = await SharedPreferences.getInstance();
       final storage = StorageService(prefs);
       final animeProvider = AnimeProvider(storage: storage);
       final themeProvider = ThemeProvider(storage);
+      final localeProvider = LocaleProvider(storage);
+      await localeProvider.setLocale('zh');
 
       final rec = AnimeRecord.createEmpty().copyWith(titleZh: '生命周期测试番剧');
       await animeProvider.addRecord(rec);
@@ -254,6 +283,7 @@ void main() {
         AnimeRecordApp(
           animeProvider: animeProvider,
           themeProvider: themeProvider,
+          localeProvider: localeProvider,
         ),
       );
       await tester.pumpAndSettle();

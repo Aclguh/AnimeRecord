@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/anime_record.dart';
 import '../../models/app_constants.dart';
+import '../theme/app_theme.dart';
 import '../widgets/anime_cover_image.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/toast_overlay.dart';
@@ -472,7 +473,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                       const SizedBox(width: 10),
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFEF4444),
+                          backgroundColor: AppTheme.dangerRed,
                           foregroundColor: Colors.white,
                         ),
                         onPressed: _handleDelete,
@@ -517,7 +518,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
             const Text(
               '*',
               style: TextStyle(
-                color: Color(0xFFEF4444),
+                color: AppTheme.dangerRed,
                 fontWeight: FontWeight.bold,
               ),
             ),

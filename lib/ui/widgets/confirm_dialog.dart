@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../l10n/l10n.dart';
+import '../theme/app_theme.dart';
 
 /// 统一风格的确认操作弹窗
 class ConfirmDialog extends StatelessWidget {
@@ -94,7 +95,7 @@ class ConfirmDialog extends StatelessWidget {
                   ElevatedButton(
                     style: isDestructive
                         ? ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFEF4444),
+                            backgroundColor: AppTheme.dangerRed,
                             foregroundColor: Colors.white,
                           )
                         : null,
