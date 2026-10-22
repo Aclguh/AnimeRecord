@@ -114,5 +114,38 @@ void main() {
 
       expect(find.byType(AnimeFormDialog), findsOneWidget);
     });
+
+    testWidgets('toggles reordering mode and renders ReorderableListView', (tester) async {
+      final record1 = AnimeRecord.createEmpty().copyWith(
+        titleZh: '番剧 A',
+        status: AnimeStatus.watching,
+      );
+      final record2 = AnimeRecord.createEmpty().copyWith(
+        titleZh: '番剧 B',
+        status: AnimeStatus.watching,
+      );
+      await animeProvider.addRecord(record1);
+      await animeProvider.addRecord(record2);
+
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle();
+
+      // 点击调整顺序按钮进入排序模式
+      final reorderBtn = find.byIcon(Icons.swap_vert_rounded);
+      expect(reorderBtn, findsOneWidget);
+      await tester.tap(reorderBtn);
+      await tester.pumpAndSettle();
+
+      // 验证重排视图与提示出现
+      expect(find.text('长按并拖动右侧手柄调整番剧排序'), findsOneWidget);
+      expect(find.byType(ReorderableListView), findsOneWidget);
+
+      // 点击完成退出排序模式
+      await tester.tap(find.text('完成'));
+      await tester.pumpAndSettle();
+
+      // 退出排序模式，还原为网格视图
+      expect(find.byType(ReorderableListView), findsNothing);
+    });
   });
 }

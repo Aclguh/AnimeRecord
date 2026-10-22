@@ -1,8 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:reorderables/reorderables.dart';
 import '../../l10n/l10n.dart';
 import '../../models/anime_record.dart';
 import '../../models/app_constants.dart';
@@ -12,6 +10,7 @@ import '../../state/theme_provider.dart';
 import '../dialogs/anime_form_dialog.dart';
 import '../dialogs/settings_dialog.dart';
 import '../widgets/anime_card.dart';
+import '../widgets/anime_cover_image.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/filter_toolbar.dart';
 import '../widgets/stats_bar.dart';
@@ -33,90 +32,18 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> {
   final FocusNode _searchFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _scrollAreaKey = GlobalKey();
 
-  bool _isDragging = false;
-  double _lastPointerY = 0;
-  Ticker? _autoScrollTicker;
-  DateTime _lastLoadMoreTime = DateTime.now();
-
-  @override
-  void initState() {
-    super.initState();
-    _autoScrollTicker = createTicker(_onAutoScrollTick);
-  }
+  bool _isReorderingMode = false;
 
   @override
   void dispose() {
-    _autoScrollTicker?.dispose();
     _scrollController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
-  }
-
-  void _onAutoScrollTick(Duration elapsed) {
-    if (!_isDragging || !_scrollController.hasClients) return;
-
-    final renderBox = _scrollAreaKey.currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox == null || !renderBox.hasSize) return;
-
-    final globalOffset = renderBox.localToGlobal(Offset.zero);
-    final topBound = globalOffset.dy;
-    final bottomBound = globalOffset.dy + renderBox.size.height;
-
-    const double edgeZone = 140.0; // 边缘感应区域大小（像素）
-    double velocity = 0.0; // 滚动速度（像素/秒，负数往上滚，正数往下滚）
-
-    if (_lastPointerY < topBound + edgeZone) {
-      // 靠近上边界：上翻/往上滚动
-      final distance = (_lastPointerY - topBound).clamp(0.0, edgeZone);
-      final ratio = (edgeZone - distance) / edgeZone; // 越靠近边缘越接近 1.0
-      velocity = -(120.0 + ratio * ratio * 880.0); // 120 ~ 1000 px/s
-    } else if (_lastPointerY > bottomBound - edgeZone) {
-      // 靠近下边界：下翻/往下滚动
-      final distance = (bottomBound - _lastPointerY).clamp(0.0, edgeZone);
-      final ratio = (edgeZone - distance) / edgeZone; // 越靠近边缘越接近 1.0
-      velocity = 120.0 + ratio * ratio * 880.0; // 120 ~ 1000 px/s
-    }
-
-    if (velocity != 0.0) {
-      final double delta = velocity * 0.016; // 16ms 步长
-      final currentOffset = _scrollController.offset;
-      final maxOffset = _scrollController.position.maxScrollExtent;
-      final newOffset = (currentOffset + delta).clamp(0.0, maxOffset);
-
-      if (newOffset != currentOffset) {
-        _scrollController.jumpTo(newOffset);
-      }
-
-      // 如果往下滚动且接近底部，并且还有更多数据，自动触发 loadMore 下翻页
-      if (velocity > 0 && currentOffset >= maxOffset - 180) {
-        final now = DateTime.now();
-        if (now.difference(_lastLoadMoreTime).inMilliseconds > 450) {
-          _lastLoadMoreTime = now;
-          if (widget.animeProvider.hasMore) {
-            widget.animeProvider.loadMore();
-          }
-        }
-      }
-    }
-  }
-
-  void _startAutoScroll() {
-    _isDragging = true;
-    if (_autoScrollTicker != null && !_autoScrollTicker!.isActive) {
-      _autoScrollTicker!.start();
-    }
-  }
-
-  void _stopAutoScroll() {
-    _isDragging = false;
-    if (_autoScrollTicker != null && _autoScrollTicker!.isActive) {
-      _autoScrollTicker!.stop();
-    }
   }
 
   void _openAddDialog() {
@@ -229,118 +156,121 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         autofocus: true,
         child: Scaffold(
           appBar: _buildHeader(context),
-          body: Listener(
-            onPointerDown: (e) => _lastPointerY = e.position.dy,
-            onPointerMove: (e) => _lastPointerY = e.position.dy,
-            onPointerUp: (_) => _stopAutoScroll(),
-            onPointerCancel: (_) => _stopAutoScroll(),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1240),
-                child: RefreshIndicator(
-                  onRefresh: _handleSync,
-                  color: Theme.of(context).colorScheme.primary,
-                  child: ListenableBuilder(
-                    listenable: widget.animeProvider,
-                    builder: (context, _) {
-                      final provider = widget.animeProvider;
-                      final isDefaultSort = provider.sortBy == SortOption.defaultSort;
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1240),
+              child: RefreshIndicator(
+                onRefresh: _handleSync,
+                color: Theme.of(context).colorScheme.primary,
+                child: ListenableBuilder(
+                  listenable: widget.animeProvider,
+                  builder: (context, _) {
+                    final provider = widget.animeProvider;
+                    final isDefaultSort = provider.sortBy == SortOption.defaultSort;
 
-                      return Container(
-                        key: _scrollAreaKey,
-                        child: Scrollbar(
+                    return Container(
+                      key: _scrollAreaKey,
+                      child: Scrollbar(
+                        controller: _scrollController,
+                        thumbVisibility: true,
+                        interactive: true,
+                        child: CustomScrollView(
                           controller: _scrollController,
-                          thumbVisibility: true,
-                          interactive: true,
-                          child: CustomScrollView(
-                            controller: _scrollController,
-                            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                            slivers: [
-                              // 1. 顶部控制栏区域（统计栏带防抖缓存隔离、工具栏与周几过滤）
-                              SliverPadding(
-                                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                                sliver: SliverToBoxAdapter(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                                    children: [
-                                      _HomeScreenStatsBar(animeProvider: provider),
-                                      const SizedBox(height: 14),
-                                      FilterToolbar(
-                                        activeStatus: provider.activeStatus,
-                                        statusCounts: provider.statusCounts,
-                                        searchQuery: provider.searchQuery,
-                                        sortBy: provider.sortBy,
-                                        onSelectStatus: provider.setStatusFilter,
-                                        onSearchChanged: provider.setSearchQuery,
-                                        onSortChanged: provider.setSortBy,
-                                        onAddAnime: _openAddDialog,
-                                      ),
-                                      const SizedBox(height: 14),
-                                      WeekFilterBar(
-                                        activeWeek: provider.activeWeek,
-                                        weekCounts: provider.activeWeekCounts,
-                                        onSelectWeek: provider.setWeekFilter,
-                                      ),
-                                    ],
-                                  ),
+                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                          slivers: [
+                            // 1. 顶部控制栏区域（统计栏带防抖缓存隔离、工具栏与周几过滤）
+                            SliverPadding(
+                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                              sliver: SliverToBoxAdapter(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    _HomeScreenStatsBar(animeProvider: provider),
+                                    const SizedBox(height: 14),
+                                    FilterToolbar(
+                                      activeStatus: provider.activeStatus,
+                                      statusCounts: provider.statusCounts,
+                                      searchQuery: provider.searchQuery,
+                                      sortBy: provider.sortBy,
+                                      onSelectStatus: provider.setStatusFilter,
+                                      onSearchChanged: provider.setSearchQuery,
+                                      onSortChanged: (sort) {
+                                        if (sort != SortOption.defaultSort && _isReorderingMode) {
+                                          setState(() => _isReorderingMode = false);
+                                        }
+                                        provider.setSortBy(sort);
+                                      },
+                                      onAddAnime: _openAddDialog,
+                                      onToggleReorderMode: () {
+                                        setState(() => _isReorderingMode = !_isReorderingMode);
+                                      },
+                                      isReorderingMode: _isReorderingMode,
+                                    ),
+                                    const SizedBox(height: 14),
+                                    WeekFilterBar(
+                                      activeWeek: provider.activeWeek,
+                                      weekCounts: provider.activeWeekCounts,
+                                      onSelectWeek: provider.setWeekFilter,
+                                    ),
+                                  ],
                                 ),
                               ),
+                            ),
 
-                              // 2. 番剧卡片网格列表 / 空状态
-                              if (provider.pagedRecords.isEmpty)
-                                SliverPadding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  sliver: SliverToBoxAdapter(
-                                    child: _buildEmptyState(context),
-                                  ),
-                                )
-                              else if (isDefaultSort)
-                                SliverPadding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  sliver: SliverToBoxAdapter(
-                                    child: _buildReorderableCards(context, provider),
-                                  ),
-                                )
-                              else
-                                SliverPadding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  sliver: _buildVirtualizedCardsGrid(context, provider),
+                            // 2. 番剧卡片网格列表 / 调整顺序列表 / 空状态
+                            if (provider.pagedRecords.isEmpty)
+                              SliverPadding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                sliver: SliverToBoxAdapter(
+                                  child: _buildEmptyState(context),
                                 ),
+                              )
+                            else if (_isReorderingMode && isDefaultSort)
+                              SliverPadding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                sliver: SliverToBoxAdapter(
+                                  child: _buildReorderListView(context, provider),
+                                ),
+                              )
+                            else
+                              SliverPadding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                sliver: _buildVirtualizedCardsGrid(context, provider),
+                              ),
 
-                              // 3. 加载更多与底部留白
-                              if (provider.hasMore)
-                                SliverToBoxAdapter(
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(top: 24, bottom: 36),
-                                    child: Center(
-                                      child: OutlinedButton(
-                                        onPressed: provider.loadMore,
-                                        style: OutlinedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                        ),
-                                        child: const Text('加载更多'),
+                            // 3. 加载更多与底部留白
+                            if (provider.hasMore && !_isReorderingMode)
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 24, bottom: 36),
+                                  child: Center(
+                                    child: OutlinedButton(
+                                      onPressed: provider.loadMore,
+                                      style: OutlinedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                       ),
+                                      child: const Text('加载更多'),
                                     ),
                                   ),
-                                )
-                              else
-                                const SliverToBoxAdapter(
-                                  child: SizedBox(height: 36),
                                 ),
-                            ],
-                          ),
+                              )
+                            else
+                              const SliverToBoxAdapter(
+                                child: SizedBox(height: 36),
+                              ),
+                          ],
                         ),
-                      );
-                    },
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
           ),
         ),
       ),
-    ),
-  ),
-),
-);
+    );
   }
 
   PreferredSizeWidget _buildHeader(BuildContext context) {
@@ -488,45 +418,91 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildReorderableCards(BuildContext context, AnimeProvider provider) {
+  Widget _buildReorderListView(BuildContext context, AnimeProvider provider) {
     final records = provider.pagedRecords;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        int crossAxisCount = 1;
-        if (constraints.maxWidth >= 1050) {
-          crossAxisCount = 3;
-        } else if (constraints.maxWidth >= 660) {
-          crossAxisCount = 2;
-        }
-
-        final double itemWidth = (constraints.maxWidth - (crossAxisCount - 1) * 14) / crossAxisCount;
-
-        return ReorderableWrap(
-          spacing: 14,
-          runSpacing: 14,
-          onReorderStarted: (_) => _startAutoScroll(),
-          onReorder: (oldIndex, newIndex) {
-            _stopAutoScroll();
-            provider.reorder(oldIndex, newIndex);
-          },
-          onNoReorder: (_) => _stopAutoScroll(),
-          children: records.map((record) {
-            final double cardHeight = record.coverUrl.trim().isNotEmpty ? 212 : 210;
-            return SizedBox(
-              key: ValueKey(record.id),
-              width: itemWidth,
-              height: cardHeight,
-              child: AnimeCard(
-                record: record,
-                onEdit: () => _openEditDialog(record),
-                onDelete: () => _handleDeleteCard(record),
-                onEpisodePlusOne: () => _handleEpisodePlusOne(record),
-              ),
-            );
-          }).toList(),
-        );
-      },
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF222226) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF3F3F46) : const Color(0xFFE4E4E7),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Row(
+              children: [
+                Icon(Icons.swap_vert_rounded, size: 18, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '长按并拖动右侧手柄调整番剧排序',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? const Color(0xFFF4F4F5) : const Color(0xFF18181B),
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => setState(() => _isReorderingMode = false),
+                  child: const Text('完成'),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: records.length,
+            // ignore: deprecated_member_use
+            onReorder: (oldIndex, newIndex) => provider.reorder(oldIndex, newIndex),
+            itemBuilder: (context, index) {
+              final record = records[index];
+              return ListTile(
+                key: ValueKey(record.id),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                leading: record.coverUrl.trim().isNotEmpty
+                    ? AnimeCoverImage(url: record.coverUrl.trim(), width: 40, height: 40)
+                    : Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF27272A) : const Color(0xFFF4F4F5),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Icon(
+                          Icons.movie_outlined,
+                          size: 20,
+                          color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
+                        ),
+                      ),
+                title: Text(
+                  record.titleZh.isEmpty ? '未命名番剧' : record.titleZh,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  '${AnimeStatus.getLabel(record.status)} · ${record.episodesWatched}/${record.episodesTotal > 0 ? record.episodesTotal : "?"} 集',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
+                  ),
+                ),
+                trailing: const Icon(Icons.drag_handle_rounded, color: Colors.grey),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 

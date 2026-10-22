@@ -13,6 +13,8 @@ class FilterToolbar extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String> onSortChanged;
   final VoidCallback onAddAnime;
+  final VoidCallback? onToggleReorderMode;
+  final bool isReorderingMode;
 
   const FilterToolbar({
     super.key,
@@ -24,6 +26,8 @@ class FilterToolbar extends StatefulWidget {
     required this.onSearchChanged,
     required this.onSortChanged,
     required this.onAddAnime,
+    this.onToggleReorderMode,
+    this.isReorderingMode = false,
   });
 
   @override
@@ -248,6 +252,36 @@ class _FilterToolbarState extends State<FilterToolbar> {
           ),
         );
 
+        final showReorder = widget.onToggleReorderMode != null && widget.sortBy == SortOption.defaultSort;
+        final reorderBtn = showReorder
+            ? Tooltip(
+                message: widget.isReorderingMode ? '完成排序' : '调整顺序',
+                child: IconButton(
+                  onPressed: widget.onToggleReorderMode,
+                  style: IconButton.styleFrom(
+                    backgroundColor: widget.isReorderingMode
+                        ? theme.colorScheme.primary.withValues(alpha: 0.15)
+                        : Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: BorderSide(
+                        color: widget.isReorderingMode
+                            ? theme.colorScheme.primary
+                            : (isDark ? const Color(0xFF3F3F46) : const Color(0xFFE4E4E7)),
+                      ),
+                    ),
+                  ),
+                  icon: Icon(
+                    widget.isReorderingMode ? Icons.check_rounded : Icons.swap_vert_rounded,
+                    size: 19,
+                    color: widget.isReorderingMode
+                        ? theme.colorScheme.primary
+                        : (isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A)),
+                  ),
+                ),
+              )
+            : null;
+
         if (isWide) {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -257,6 +291,7 @@ class _FilterToolbarState extends State<FilterToolbar> {
               searchBox,
               const SizedBox(width: 10),
               sortDropdown,
+              if (reorderBtn != null) ...[const SizedBox(width: 8), reorderBtn],
               const SizedBox(width: 10),
               addBtn,
             ],
@@ -272,6 +307,7 @@ class _FilterToolbarState extends State<FilterToolbar> {
                   Expanded(child: searchBox),
                   const SizedBox(width: 8),
                   sortDropdown,
+                  if (reorderBtn != null) ...[const SizedBox(width: 8), reorderBtn],
                   const SizedBox(width: 8),
                   addBtn,
                 ],
@@ -290,6 +326,7 @@ class _FilterToolbarState extends State<FilterToolbar> {
               Row(
                 children: [
                   Expanded(child: sortDropdown),
+                  if (reorderBtn != null) ...[const SizedBox(width: 8), reorderBtn],
                   const SizedBox(width: 10),
                   addBtn,
                 ],
