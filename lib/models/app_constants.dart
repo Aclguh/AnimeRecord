@@ -51,6 +51,7 @@ abstract final class AnimeStatus {
   static const String onHold = 'on_hold';
   static const String watched = 'watched';
   static const String dropped = 'dropped';
+  static const String allValue = 'all';
 
   static const String watchingValue = watching;
   static const String wantToWatchValue = wantToWatch;
