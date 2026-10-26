@@ -110,7 +110,7 @@ class AnimeProvider extends ChangeNotifier {
 
   Future<bool> deleteRecord(String id) => _repository.deleteRecord(id);
 
-  Future<({AnimeRecord? record, String? statusChangedMessage})> episodePlusOne(
+  Future<({AnimeRecord? record, String? statusChangedMessage, WatchStatus? transitionedStatus})> episodePlusOne(
     String id, {
     bool debounce = true,
   }) =>

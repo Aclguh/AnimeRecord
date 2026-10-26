@@ -301,8 +301,11 @@ class AnimeRecord {
   /// 强类型季度枚举 Getter
   SeasonEnum? get seasonEnum => SeasonEnum.fromValue(season);
 
-  /// 核心领域状态机方法：集数递增并自动触发状态流转（到达总集数标记完成，想看/搁置流转为在看）
-  ({AnimeRecord record, String? statusChangedMessage}) incrementEpisode() {
+  /// 核心领域状态机方法：集数递增并自动触发状态流转（到达总集数标记完成，想看/搁置流转为在看，支持注入确定性时钟）
+  ({AnimeRecord record, String? statusChangedMessage, WatchStatus? transitionedStatus}) incrementEpisode({
+    DateTime? now,
+  }) {
+    final currentNow = now ?? DateTime.now();
     int newWatched = episodesWatched + 1;
     String newStatus = status;
     String newEndDate = endDate;
@@ -316,7 +319,7 @@ class AnimeRecord {
     if (episodesTotal > 0 && newWatched >= episodesTotal) {
       newStatus = AnimeStatus.watched;
       if (newEndDate.isEmpty) {
-        newEndDate = DateTime.now().toIso8601String().split('T').first;
+        newEndDate = currentNow.toIso8601String().split('T').first;
       }
       newWatched = episodesTotal;
     }
@@ -325,11 +328,13 @@ class AnimeRecord {
       episodesWatched: newWatched,
       status: newStatus,
       endDate: newEndDate,
-      updatedAt: DateTime.now().toIso8601String(),
+      updatedAt: currentNow.toIso8601String(),
     );
 
     String? msg;
+    WatchStatus? transitioned;
     if (newStatus != status) {
+      transitioned = WatchStatus.fromValue(newStatus);
       if (newStatus == AnimeStatus.watched) {
         msg = '「${updated.titleZh}」已追完';
       } else if (newStatus == AnimeStatus.watching) {
@@ -337,7 +342,7 @@ class AnimeRecord {
       }
     }
 
-    return (record: updated, statusChangedMessage: msg);
+    return (record: updated, statusChangedMessage: msg, transitionedStatus: transitioned);
   }
 
   @override

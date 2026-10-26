@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/anime_record.dart';
 import '../models/app_constants.dart';
 import '../models/sync_config.dart';
+import 'logger_service.dart';
 
 /// 本地持久化与偏好存储抽象接口（解耦底层存储实现，方便未来无缝迁移到 SQLite / Drift / Isar 数据库）
 abstract interface class IStorageService {
@@ -126,7 +126,7 @@ class StorageService implements IStorageService {
         }
       }
     } catch (e, st) {
-      debugPrint('StorageService: SecureStorage 初始化异常，回退读取加密缓存: $e\n$st');
+      AppLogger.warn('StorageService', 'SecureStorage 初始化异常，回退读取加密缓存', e, st);
       final raw = preferences.getString(syncTokenKey) ?? '';
       service._cachedToken = _decryptFallback(raw);
     }
@@ -164,7 +164,7 @@ class StorageService implements IStorageService {
       try {
         return _parseJsonRecords(raw);
       } catch (e, st) {
-        debugPrint('StorageService: 主存储数据损坏或反序列化失败: $e\n$st\n尝试从容灾备份快照恢复...');
+        AppLogger.warn('StorageService', '主存储数据损坏或反序列化失败，尝试从容灾备份快照恢复...', e, st);
       }
     }
 
@@ -177,7 +177,7 @@ class StorageService implements IStorageService {
         try {
           final restored = _parseJsonRecords(slotRaw);
           if (restored.isNotEmpty) {
-            debugPrint('StorageService: 成功从滚动快照槽位 $slotIndex 恢复 ${restored.length} 条记录，自愈修复主存储...');
+            AppLogger.info('StorageService', '成功从滚动快照槽位 $slotIndex 恢复 ${restored.length} 条记录，自愈修复主存储...');
             _prefs.setString(storageKey, slotRaw);
             return restored;
           }
@@ -191,13 +191,13 @@ class StorageService implements IStorageService {
       if (backupRaw != null && backupRaw.trim().isNotEmpty) {
         final restored = _parseJsonRecords(backupRaw);
         if (restored.isNotEmpty) {
-          debugPrint('StorageService: 成功从备份快照恢复 ${restored.length} 条记录，正在自愈修复主存储...');
+          AppLogger.info('StorageService', '成功从备份快照恢复 ${restored.length} 条记录，正在自愈修复主存储...');
           _prefs.setString(storageKey, backupRaw);
           return restored;
         }
       }
     } catch (e, st) {
-      debugPrint('StorageService: 备份快照恢复失败: $e\n$st');
+      AppLogger.warn('StorageService', '备份快照恢复失败', e, st);
     }
 
     return [];
@@ -225,7 +225,7 @@ class StorageService implements IStorageService {
       await _prefs.setInt(versionKey, dataVersion);
       return true;
     } catch (e, st) {
-      debugPrint('StorageService: 保存记录失败: $e\n$st');
+      AppLogger.error('StorageService', '保存记录失败', e, st);
       return false;
     }
   }
@@ -343,7 +343,7 @@ class StorageService implements IStorageService {
     try {
       await _prefs.setString(tombstonesKey, jsonEncode(tombstones));
     } catch (e, st) {
-      debugPrint('StorageService: 保存墓碑数据失败: $e\n$st');
+      AppLogger.error('StorageService', '保存墓碑数据失败', e, st);
     }
   }
 
@@ -455,7 +455,7 @@ class StorageService implements IStorageService {
         // 成功写入安全存储，移除偏好存储中可能存在的密文或明文，杜绝冗余落盘
         await _prefs.remove(syncTokenKey);
       } catch (e, st) {
-        debugPrint('StorageService: 写入 SecureStorage 失败，应用轻量级混淆加密后降级写入 SharedPreferences: $e\n$st');
+        AppLogger.warn('StorageService', '写入 SecureStorage 失败，应用轻量级混淆加密后降级写入 SharedPreferences', e, st);
       }
 
       if (!secureSaved) {

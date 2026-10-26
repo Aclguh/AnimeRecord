@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/anime_record.dart';
+import '../models/app_constants.dart';
 import '../models/sync_config.dart';
 import 'storage_service.dart';
 import 'sync_service.dart';
@@ -121,13 +122,13 @@ class AnimeRepository extends ChangeNotifier {
     return ok;
   }
 
-  /// 快捷 +1 集（业务状态自动流转，支持写入防抖）
-  Future<({AnimeRecord? record, String? statusChangedMessage})> episodePlusOne(
+  /// 快捷 +1 集（业务状态自动流转，支持写入防抖与强类型状态流转事件）
+  Future<({AnimeRecord? record, String? statusChangedMessage, WatchStatus? transitionedStatus})> episodePlusOne(
     String id, {
     bool debounce = true,
   }) async {
     final index = _records.indexWhere((r) => r.id == id);
-    if (index == -1) return (record: null, statusChangedMessage: null);
+    if (index == -1) return (record: null, statusChangedMessage: null, transitionedStatus: null);
 
     final result = _records[index].incrementEpisode();
     final updated = result.record;
@@ -142,7 +143,11 @@ class AnimeRepository extends ChangeNotifier {
       await storage.saveRecords(_records);
     }
 
-    return (record: updated, statusChangedMessage: result.statusChangedMessage);
+    return (
+      record: updated,
+      statusChangedMessage: result.statusChangedMessage,
+      transitionedStatus: result.transitionedStatus,
+    );
   }
 
   /// 重新排列当前展示记录对应的物理存储顺序

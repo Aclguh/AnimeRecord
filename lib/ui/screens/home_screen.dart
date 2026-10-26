@@ -119,7 +119,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _handleEpisodePlusOne(AnimeRecord record) async {
     final result = await widget.animeProvider.episodePlusOne(record.id);
-    if (mounted && result.statusChangedMessage != null) {
+    if (!mounted) return;
+
+    if (result.transitionedStatus != null) {
+      final title = record.titleZh.isEmpty
+          ? (context.l10nOrNull?.unnamedAnime ?? '未命名番剧')
+          : record.titleZh;
+      final msg = switch (result.transitionedStatus!) {
+        WatchStatus.watched =>
+          context.l10nOrNull?.statusChangedWatched(title) ?? '「$title」已追完',
+        WatchStatus.watching =>
+          context.l10nOrNull?.statusChangedWatching(title) ?? '「$title」状态已切换为「在看」',
+        _ => result.statusChangedMessage,
+      };
+      if (msg != null) {
+        Toast.show(context, msg, type: ToastType.info);
+      }
+    } else if (result.statusChangedMessage != null) {
       Toast.show(context, result.statusChangedMessage!, type: ToastType.info);
     }
   }
