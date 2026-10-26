@@ -158,6 +158,48 @@ abstract class AppLocalizations {
   /// **'完成'**
   String get done;
 
+  /// 编辑操作
+  ///
+  /// In zh, this message translates to:
+  /// **'编辑'**
+  String get edit;
+
+  /// 删除操作
+  ///
+  /// In zh, this message translates to:
+  /// **'删除'**
+  String get delete;
+
+  /// 调整排序
+  ///
+  /// In zh, this message translates to:
+  /// **'调整排序'**
+  String get reorder;
+
+  /// 调整排序提示
+  ///
+  /// In zh, this message translates to:
+  /// **'长按并拖动右侧手柄调整番剧排序'**
+  String get reorderTip;
+
+  /// 加载更多
+  ///
+  /// In zh, this message translates to:
+  /// **'加载更多'**
+  String get loadMore;
+
+  /// 未匹配到番剧
+  ///
+  /// In zh, this message translates to:
+  /// **'没有找到符合条件的番剧'**
+  String get noMatchingAnime;
+
+  /// 未匹配到番剧副标题
+  ///
+  /// In zh, this message translates to:
+  /// **'没有找到符合条件的番剧，试试调整筛选条件吧！'**
+  String get noMatchingAnimeSubtitle;
+
   /// 统计栏共收录记录数标签
   ///
   /// In zh, this message translates to:
@@ -218,6 +260,36 @@ abstract class AppLocalizations {
   /// **'默认排序'**
   String get sortDefault;
 
+  /// 按最近添加时间降序排序
+  ///
+  /// In zh, this message translates to:
+  /// **'最近添加'**
+  String get sortDateAddedDesc;
+
+  /// 按添加时间升序排序
+  ///
+  /// In zh, this message translates to:
+  /// **'最早添加'**
+  String get sortDateAddedAsc;
+
+  /// 按名称拼音字母正序
+  ///
+  /// In zh, this message translates to:
+  /// **'名称 A-Z'**
+  String get sortTitleZhAsc;
+
+  /// 按名称拼音字母倒序
+  ///
+  /// In zh, this message translates to:
+  /// **'名称 Z-A'**
+  String get sortTitleZhDesc;
+
+  /// 按剩余集数排序
+  ///
+  /// In zh, this message translates to:
+  /// **'剩余集数'**
+  String get sortEpisodesLeft;
+
   /// 按评分降序排列
   ///
   /// In zh, this message translates to:
@@ -265,6 +337,240 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'看完'**
   String get finishWatching;
+
+  /// 已完成总集数
+  ///
+  /// In zh, this message translates to:
+  /// **'已完成 {count} 集'**
+  String completedEpisodes(int count);
+
+  /// 剩余集数
+  ///
+  /// In zh, this message translates to:
+  /// **'剩 {count} 集'**
+  String remainingEpisodes(int count);
+
+  /// 已看集数
+  ///
+  /// In zh, this message translates to:
+  /// **'已看 {count} 集'**
+  String watchedEpisodes(int count);
+
+  /// 尚未开始观看
+  ///
+  /// In zh, this message translates to:
+  /// **'尚未开始观看'**
+  String get notStartedYet;
+
+  /// 已追完
+  ///
+  /// In zh, this message translates to:
+  /// **'已追完'**
+  String get completed;
+
+  /// 刚刚更新
+  ///
+  /// In zh, this message translates to:
+  /// **'刚刚'**
+  String get justNow;
+
+  /// 若干分钟前
+  ///
+  /// In zh, this message translates to:
+  /// **'{count}分钟前'**
+  String minutesAgo(int count);
+
+  /// 若干小时前
+  ///
+  /// In zh, this message translates to:
+  /// **'{count}小时前'**
+  String hoursAgo(int count);
+
+  /// 若干天前
+  ///
+  /// In zh, this message translates to:
+  /// **'{count}天前'**
+  String daysAgo(int count);
+
+  /// 最后修改时间提示
+  ///
+  /// In zh, this message translates to:
+  /// **'最后修改：{time}'**
+  String lastModified(String time);
+
+  /// 删除番剧确认提示
+  ///
+  /// In zh, this message translates to:
+  /// **'确定要删除「{title}」吗？此操作不可撤销。'**
+  String deleteAnimeConfirm(String title);
+
+  /// 添加成功通知
+  ///
+  /// In zh, this message translates to:
+  /// **'「{title}」已添加'**
+  String animeAddedSuccess(String title);
+
+  /// 更新成功通知
+  ///
+  /// In zh, this message translates to:
+  /// **'「{title}」已更新'**
+  String animeUpdatedSuccess(String title);
+
+  /// 删除成功通知
+  ///
+  /// In zh, this message translates to:
+  /// **'「{title}」已删除'**
+  String animeDeletedSuccess(String title);
+
+  /// 状态流转为已追完通知
+  ///
+  /// In zh, this message translates to:
+  /// **'「{title}」已追完'**
+  String statusChangedWatched(String title);
+
+  /// 状态流转为在看通知
+  ///
+  /// In zh, this message translates to:
+  /// **'「{title}」状态已切换为「在看」'**
+  String statusChangedWatching(String title);
+
+  /// 中文名称标签
+  ///
+  /// In zh, this message translates to:
+  /// **'中文名称'**
+  String get titleZhLabel;
+
+  /// 中文名称输入提示
+  ///
+  /// In zh, this message translates to:
+  /// **'例：葬送的芙莉莲'**
+  String get titleZhHint;
+
+  /// 中文名称校验报错
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入番剧名称'**
+  String get titleZhValidation;
+
+  /// 日文原名标签
+  ///
+  /// In zh, this message translates to:
+  /// **'日文原名'**
+  String get titleJaLabel;
+
+  /// 日文原名输入提示
+  ///
+  /// In zh, this message translates to:
+  /// **'例：葬送のフリーレン'**
+  String get titleJaHint;
+
+  /// 封面链接标签
+  ///
+  /// In zh, this message translates to:
+  /// **'封面链接'**
+  String get coverUrlLabel;
+
+  /// 封面链接提示
+  ///
+  /// In zh, this message translates to:
+  /// **'以 http:// 或 https:// 开头'**
+  String get coverUrlHint;
+
+  /// 封面链接校验报错
+  ///
+  /// In zh, this message translates to:
+  /// **'封面链接必须是以 http:// 或 https:// 开头的有效网址'**
+  String get coverUrlValidation;
+
+  /// 表单中的观看状态选择标签
+  ///
+  /// In zh, this message translates to:
+  /// **'观看状态'**
+  String get watchStatusSelectLabel;
+
+  /// 表单中的更新频率标签
+  ///
+  /// In zh, this message translates to:
+  /// **'更新频率'**
+  String get airDaySelectLabel;
+
+  /// 不设置更新频率
+  ///
+  /// In zh, this message translates to:
+  /// **'不设置'**
+  String get airDayNone;
+
+  /// 表单中的播放状态选择标签
+  ///
+  /// In zh, this message translates to:
+  /// **'播放状态'**
+  String get airStatusSelectLabel;
+
+  /// 不设置播放状态
+  ///
+  /// In zh, this message translates to:
+  /// **'不设置'**
+  String get airStatusNone;
+
+  /// 已看集数标签
+  ///
+  /// In zh, this message translates to:
+  /// **'已看集数'**
+  String get episodesWatchedLabel;
+
+  /// 总集数标签
+  ///
+  /// In zh, this message translates to:
+  /// **'总集数'**
+  String get episodesTotalLabel;
+
+  /// 总集数输入提示
+  ///
+  /// In zh, this message translates to:
+  /// **'0 表示未知或未完结'**
+  String get episodesTotalHint;
+
+  /// 个人评分标签
+  ///
+  /// In zh, this message translates to:
+  /// **'个人评分'**
+  String get ratingLabel;
+
+  /// 个人评分提示
+  ///
+  /// In zh, this message translates to:
+  /// **'0.0 表示未评分'**
+  String get ratingHint;
+
+  /// 标签分类标签
+  ///
+  /// In zh, this message translates to:
+  /// **'标签分类'**
+  String get tagsLabel;
+
+  /// 追番笔记标签
+  ///
+  /// In zh, this message translates to:
+  /// **'追番笔记与短评'**
+  String get notesLabel;
+
+  /// 追番笔记输入提示
+  ///
+  /// In zh, this message translates to:
+  /// **'写点短评、追番感受或备忘...'**
+  String get notesHint;
+
+  /// 折叠高级选项
+  ///
+  /// In zh, this message translates to:
+  /// **'更多高级选项'**
+  String get advancedOptions;
+
+  /// 未命名番剧默认占位名
+  ///
+  /// In zh, this message translates to:
+  /// **'未命名番剧'**
+  String get unnamedAnime;
 
   /// 备注字段
   ///

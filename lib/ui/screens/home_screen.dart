@@ -55,7 +55,12 @@ class _HomeScreenState extends State<HomeScreen> {
       onSave: (newRecord) async {
         final res = await widget.animeProvider.addRecord(newRecord);
         if (mounted && res != null) {
-          Toast.show(context, '「${res.titleZh}」已添加', type: ToastType.success);
+          final title = res.titleZh.isEmpty ? (context.l10nOrNull?.unnamedAnime ?? '未命名番剧') : res.titleZh;
+          Toast.show(
+            context,
+            context.l10nOrNull?.animeAddedSuccess(title) ?? '「$title」已添加',
+            type: ToastType.success,
+          );
         }
       },
     );
@@ -68,30 +73,46 @@ class _HomeScreenState extends State<HomeScreen> {
       onSave: (updated) async {
         final res = await widget.animeProvider.updateRecord(record.id, updated);
         if (mounted && res != null) {
-          Toast.show(context, '「${res.titleZh}」已更新', type: ToastType.success);
+          final title = res.titleZh.isEmpty ? (context.l10nOrNull?.unnamedAnime ?? '未命名番剧') : res.titleZh;
+          Toast.show(
+            context,
+            context.l10nOrNull?.animeUpdatedSuccess(title) ?? '「$title」已更新',
+            type: ToastType.success,
+          );
         }
       },
       onDelete: () async {
         final ok = await widget.animeProvider.deleteRecord(record.id);
         if (mounted && ok) {
-          Toast.show(context, '「${record.titleZh}」已删除', type: ToastType.success);
+          final title = record.titleZh.isEmpty ? (context.l10nOrNull?.unnamedAnime ?? '未命名番剧') : record.titleZh;
+          Toast.show(
+            context,
+            context.l10nOrNull?.animeDeletedSuccess(title) ?? '「$title」已删除',
+            type: ToastType.success,
+          );
         }
       },
     );
   }
 
   Future<void> _handleDeleteCard(AnimeRecord record) async {
+    final title = record.titleZh.isEmpty ? (context.l10nOrNull?.unnamedAnime ?? '未命名番剧') : record.titleZh;
     final confirmed = await ConfirmDialog.show(
       context,
-      title: '删除番剧',
-      message: '确定要删除「${record.titleZh.isEmpty ? "未命名番剧" : record.titleZh}」吗？此操作不可撤销。',
+      title: context.l10nOrNull?.deleteAnime ?? '删除番剧',
+      message: context.l10nOrNull?.deleteAnimeConfirm(title) ??
+          '确定要删除「$title」吗？此操作不可撤销。',
       isDestructive: true,
     );
 
     if (confirmed == true && mounted) {
       final ok = await widget.animeProvider.deleteRecord(record.id);
       if (mounted && ok) {
-        Toast.show(context, '「${record.titleZh}」已删除', type: ToastType.success);
+        Toast.show(
+          context,
+          context.l10nOrNull?.animeDeletedSuccess(title) ?? '「$title」已删除',
+          type: ToastType.success,
+        );
       }
     }
   }
@@ -150,6 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10nOrNull;
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.keyN, control: true): _openAddDialog,
@@ -253,7 +275,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                       ),
-                                      child: const Text('加载更多'),
+                                      child: Text(l10n?.loadMore ?? '加载更多'),
                                     ),
                                   ),
                                 ),
@@ -392,7 +414,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 18),
           Text(
-            isTotalEmpty ? (context.l10nOrNull?.emptyStateTitle ?? '还没有番剧记录') : '没有找到符合条件的番剧',
+            isTotalEmpty ? (context.l10nOrNull?.emptyStateTitle ?? '还没有番剧记录') : (context.l10nOrNull?.noMatchingAnime ?? '没有找到符合条件的番剧'),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -403,7 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Text(
             isTotalEmpty
                 ? (context.l10nOrNull?.emptyStateSubtitle ?? '点击「添加番剧」开始记录你的追番之旅吧！')
-                : '没有找到符合条件的番剧，试试调整筛选条件吧！',
+                : (context.l10nOrNull?.noMatchingAnimeSubtitle ?? '没有找到符合条件的番剧，试试调整筛选条件吧！'),
             style: TextStyle(
               fontSize: 14,
               color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
@@ -449,7 +471,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '长按并拖动右侧手柄调整番剧排序',
+                    context.l10nOrNull?.reorderTip ?? '长按并拖动右侧手柄调整番剧排序',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -459,7 +481,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 TextButton(
                   onPressed: () => setState(() => _isReorderingMode = false),
-                  child: const Text('完成'),
+                  child: Text(context.l10nOrNull?.done ?? '完成'),
                 ),
               ],
             ),
@@ -469,8 +491,10 @@ class _HomeScreenState extends State<HomeScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: records.length,
-            // ignore: deprecated_member_use
-            onReorder: (oldIndex, newIndex) => provider.reorder(oldIndex, newIndex),
+            onReorderItem: (oldIndex, newIndex) {
+              final targetIndex = oldIndex < newIndex ? newIndex + 1 : newIndex;
+              provider.reorder(oldIndex, targetIndex);
+            },
             itemBuilder: (context, index) {
               final record = records[index];
               return ListTile(
@@ -492,7 +516,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                 title: Text(
-                  record.titleZh.isEmpty ? '未命名番剧' : record.titleZh,
+                  record.titleZh.isEmpty ? (context.l10nOrNull?.unnamedAnime ?? '未命名番剧') : record.titleZh,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),

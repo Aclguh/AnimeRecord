@@ -125,7 +125,7 @@ class AnimeCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '编辑',
+                            context.l10nOrNull?.edit ?? '编辑',
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w500,
@@ -154,7 +154,8 @@ class AnimeCard extends StatelessWidget {
                   // 最后修改时间
                   if (record.formatRelativeUpdatedAt().isNotEmpty)
                     Tooltip(
-                      message: '最后修改：${record.formatFullUpdatedAt()}',
+                      message: context.l10nOrNull?.lastModified(record.formatFullUpdatedAt()) ??
+                          '最后修改：${record.formatFullUpdatedAt()}',
                       child: Text(
                         record.formatRelativeUpdatedAt(
                           locale: Localizations.maybeLocaleOf(context)?.languageCode ?? 'zh',
@@ -216,7 +217,7 @@ class AnimeCard extends StatelessWidget {
         Tooltip(
           message: record.titleZh,
           child: Text(
-            record.titleZh.isEmpty ? '未命名番剧' : record.titleZh,
+            record.titleZh.isEmpty ? (context.l10nOrNull?.unnamedAnime ?? '未命名番剧') : record.titleZh,
             style: TextStyle(
               fontSize: compact ? 16 : 16.5,
               fontWeight: FontWeight.bold,
@@ -274,7 +275,8 @@ class AnimeCard extends StatelessWidget {
             const Icon(Icons.check_circle_rounded, size: 14, color: AppTheme.successGreen),
             const SizedBox(width: 5),
             Text(
-              '已完成 ${record.episodesTotal} 集',
+              context.l10nOrNull?.completedEpisodes(record.episodesTotal) ??
+                  '已完成 ${record.episodesTotal} 集',
               style: const TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
@@ -307,7 +309,7 @@ class AnimeCard extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                '剩 $remaining 集',
+                context.l10nOrNull?.remainingEpisodes(remaining) ?? '剩 $remaining 集',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
@@ -334,7 +336,8 @@ class AnimeCard extends StatelessWidget {
 
     if (record.episodesWatched > 0) {
       return Text(
-        '已看 ${record.episodesWatched} 集',
+        context.l10nOrNull?.watchedEpisodes(record.episodesWatched) ??
+            '已看 ${record.episodesWatched} 集',
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w600,
@@ -344,7 +347,7 @@ class AnimeCard extends StatelessWidget {
     }
 
     return Text(
-      '尚未开始观看',
+      context.l10nOrNull?.notStartedYet ?? '尚未开始观看',
       style: TextStyle(
         fontSize: 12.5,
         color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
@@ -360,14 +363,14 @@ class AnimeCard extends StatelessWidget {
           color: AppTheme.successGreen.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.check_rounded, size: 14, color: AppTheme.successGreen),
-            SizedBox(width: 4),
+            const Icon(Icons.check_rounded, size: 14, color: AppTheme.successGreen),
+            const SizedBox(width: 4),
             Text(
-              '已追完',
-              style: TextStyle(
+              context.l10nOrNull?.completed ?? '已追完',
+              style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.successGreen,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../l10n/l10n.dart';
 import '../../models/anime_record.dart';
 import '../../models/app_constants.dart';
 import '../theme/app_theme.dart';
@@ -156,10 +157,14 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
   }
 
   Future<void> _handleDelete() async {
+    final title = _titleZhController.text.trim().isEmpty
+        ? (context.l10nOrNull?.unnamedAnime ?? '未命名番剧')
+        : _titleZhController.text.trim();
     final confirmed = await ConfirmDialog.show(
       context,
-      title: '删除番剧',
-      message: '确定要删除「${_titleZhController.text.trim()}」吗？此操作不可撤销。',
+      title: context.l10nOrNull?.deleteAnime ?? '删除番剧',
+      message: context.l10nOrNull?.deleteAnimeConfirm(title) ??
+          '确定要删除「$title」吗？此操作不可撤销。',
       isDestructive: true,
     );
 
@@ -172,6 +177,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10nOrNull;
     final isEditing = widget.initialRecord != null;
 
     return Dialog(
@@ -190,7 +196,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                 Row(
                   children: [
                     Text(
-                      isEditing ? '编辑番剧' : '添加番剧',
+                      isEditing ? (l10n?.editAnime ?? '编辑番剧') : (l10n?.addAnime ?? '添加番剧'),
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         fontSize: 19,
@@ -214,16 +220,16 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         // 中文名称（必填）
-                        _buildLabel('中文名称', required: true),
+                        _buildLabel(l10n?.titleZhLabel ?? '中文名称', required: true),
                         TextFormField(
                           controller: _titleZhController,
                           autofocus: !isEditing,
-                          decoration: const InputDecoration(
-                            hintText: '例：葬送的芙莉莲',
+                          decoration: InputDecoration(
+                            hintText: l10n?.titleZhHint ?? '例：葬送的芙莉莲',
                           ),
                           validator: (val) {
                             if (val == null || val.trim().isEmpty) {
-                              return '请输入番剧名称';
+                              return l10n?.titleZhValidation ?? '请输入番剧名称';
                             }
                             return null;
                           },
@@ -236,7 +242,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _buildLabel('观看状态'),
+                                  _buildLabel(l10n?.watchStatusSelectLabel ?? '观看状态'),
                                   DropdownButtonFormField<String>(
                                     initialValue: _status,
                                     decoration: const InputDecoration(),
@@ -258,14 +264,14 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _buildLabel('更新频率'),
+                                  _buildLabel(l10n?.airDaySelectLabel ?? '更新频率'),
                                   DropdownButtonFormField<String>(
                                     initialValue: _week,
                                     decoration: const InputDecoration(),
                                     items: [
-                                      const DropdownMenuItem(
+                                      DropdownMenuItem(
                                         value: '',
-                                        child: Text('不设置'),
+                                        child: Text(l10n?.airDayNone ?? '不设置'),
                                       ),
                                       ...WeekDay.order.map((w) {
                                         return DropdownMenuItem(
@@ -291,14 +297,14 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _buildLabel('播放状态'),
+                                  _buildLabel(l10n?.airStatusSelectLabel ?? '播放状态'),
                                   DropdownButtonFormField<String>(
                                     initialValue: _airStatus,
                                     decoration: const InputDecoration(),
                                     items: [
-                                      const DropdownMenuItem(
+                                      DropdownMenuItem(
                                         value: '',
-                                        child: Text('不显示'),
+                                        child: Text(l10n?.airStatusNone ?? '不显示'),
                                       ),
                                       ...AirStatus.allValues.map((a) {
                                         return DropdownMenuItem(
@@ -326,7 +332,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _buildLabel('已看集数'),
+                                  _buildLabel(l10n?.episodesWatchedLabel ?? '已看集数'),
                                   TextFormField(
                                     controller: _epWatchedController,
                                     keyboardType: TextInputType.number,
@@ -341,12 +347,14 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _buildLabel('总集数'),
+                                  _buildLabel(l10n?.episodesTotalLabel ?? '总集数'),
                                   TextFormField(
                                     controller: _epTotalController,
                                     keyboardType: TextInputType.number,
                                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                    decoration: const InputDecoration(hintText: '0 (未知)'),
+                                    decoration: InputDecoration(
+                                      hintText: l10n?.episodesTotalHint ?? '0 (未知)',
+                                    ),
                                   ),
                                 ],
                               ),
@@ -367,7 +375,9 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                             child: Row(
                               children: [
                                 Text(
-                                  _isAdvancedExpanded ? '收起更多信息' : '展开更多信息 (封面海报、日文名、标签、评分等)',
+                                  _isAdvancedExpanded
+                                      ? (l10n?.cancel ?? '收起更多信息')
+                                      : (l10n?.advancedOptions ?? '展开更多信息 (封面海报、日文名、标签、评分等)'),
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
@@ -388,7 +398,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                         if (_isAdvancedExpanded) ...[
                           const SizedBox(height: 12),
                           // 封面海报链接输入与预览
-                          _buildLabel('封面图片链接 (URL)'),
+                          _buildLabel(l10n?.coverUrlLabel ?? '封面图片链接 (URL)'),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -400,13 +410,13 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                                     if (val != null && val.trim().isNotEmpty) {
                                       final uri = Uri.tryParse(val.trim());
                                       if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https') || uri.host.isEmpty) {
-                                        return '封面链接必须是以 http:// 或 https:// 开头的有效网址';
+                                        return l10n?.coverUrlValidation ?? '封面链接必须是以 http:// 或 https:// 开头的有效网址';
                                       }
                                     }
                                     return null;
                                   },
-                                  decoration: const InputDecoration(
-                                    hintText: 'https://example.com/poster.jpg',
+                                  decoration: InputDecoration(
+                                    hintText: l10n?.coverUrlHint ?? 'https://example.com/poster.jpg',
                                   ),
                                 ),
                               ),
@@ -422,16 +432,16 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                           ),
                           const SizedBox(height: 14),
                           // 日文名称
-                          _buildLabel('日文名称'),
+                          _buildLabel(l10n?.titleJaLabel ?? '日文名称'),
                           TextFormField(
                             controller: _titleJaController,
-                            decoration: const InputDecoration(
-                              hintText: '例：葬送のフリーレン',
+                            decoration: InputDecoration(
+                              hintText: l10n?.titleJaHint ?? '例：葬送のフリーレン',
                             ),
                           ),
                           const SizedBox(height: 14),
                           // 标签选择器
-                          _buildLabel('标签 (点击选择或添加)'),
+                          _buildLabel(l10n?.tagsLabel ?? '标签 (点击选择或添加)'),
                           TagSelectorSection(
                             tags: _tags,
                             onTagsChanged: (newTags) => setState(() => _tags = newTags),
@@ -439,19 +449,19 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                           const SizedBox(height: 14),
 
                           // 评分
-                          _buildLabel('评分 (0 - 10)'),
+                          _buildLabel(l10n?.ratingLabel ?? '评分 (0 - 10)'),
                           RatingPickerSection(
                             rating: _rating,
                             onRatingChanged: (newRating) => setState(() => _rating = newRating),
                           ),
                           const SizedBox(height: 14),
                           // 备注
-                          _buildLabel('备注 / 评价'),
+                          _buildLabel(l10n?.notesLabel ?? '备注 / 评价'),
                           TextFormField(
                             controller: _notesController,
                             maxLines: 3,
-                            decoration: const InputDecoration(
-                              hintText: '写下观后感、观看平台或备忘笔记...',
+                            decoration: InputDecoration(
+                              hintText: l10n?.notesHint ?? '写下观后感、观看平台或备忘笔记...',
                             ),
                           ),
                         ],
@@ -467,7 +477,7 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                   children: [
                     OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('取消'),
+                      child: Text(l10n?.cancel ?? '取消'),
                     ),
                     if (isEditing && widget.onDelete != null) ...[
                       const SizedBox(width: 10),
@@ -478,13 +488,13 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
                         ),
                         onPressed: _handleDelete,
                         icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                        label: const Text('删除'),
+                        label: Text(l10n?.delete ?? '删除'),
                       ),
                     ],
                     const SizedBox(width: 10),
                     ElevatedButton(
                       onPressed: _save,
-                      child: const Text('保存'),
+                      child: Text(l10n?.save ?? '保存'),
                     ),
                   ],
                 ),

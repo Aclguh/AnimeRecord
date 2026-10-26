@@ -205,6 +205,11 @@ class _FilterToolbarState extends State<FilterToolbar> {
 
         String getSortLabel(String key) => switch (key) {
           SortOption.defaultSort => l10n?.sortDefault ?? '默认排序',
+          SortOption.dateAddedDesc => l10n?.sortDateAddedDesc ?? '最近添加',
+          SortOption.dateAddedAsc => l10n?.sortDateAddedAsc ?? '最早添加',
+          SortOption.titleZhAsc => l10n?.sortTitleZhAsc ?? '名称 A-Z',
+          SortOption.titleZhDesc => l10n?.sortTitleZhDesc ?? '名称 Z-A',
+          SortOption.episodesLeft => l10n?.sortEpisodesLeft ?? '剩余集数',
           _ => SortOption.labels[key] ?? key,
         };
 

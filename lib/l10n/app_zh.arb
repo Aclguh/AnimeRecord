@@ -40,6 +40,34 @@
   "@done": {
     "description": "完成按钮文案"
   },
+  "edit": "编辑",
+  "@edit": {
+    "description": "编辑操作"
+  },
+  "delete": "删除",
+  "@delete": {
+    "description": "删除操作"
+  },
+  "reorder": "调整排序",
+  "@reorder": {
+    "description": "调整排序"
+  },
+  "reorderTip": "长按并拖动右侧手柄调整番剧排序",
+  "@reorderTip": {
+    "description": "调整排序提示"
+  },
+  "loadMore": "加载更多",
+  "@loadMore": {
+    "description": "加载更多"
+  },
+  "noMatchingAnime": "没有找到符合条件的番剧",
+  "@noMatchingAnime": {
+    "description": "未匹配到番剧"
+  },
+  "noMatchingAnimeSubtitle": "没有找到符合条件的番剧，试试调整筛选条件吧！",
+  "@noMatchingAnimeSubtitle": {
+    "description": "未匹配到番剧副标题"
+  },
   "totalRecords": "共收录",
   "@totalRecords": {
     "description": "统计栏共收录记录数标签"
@@ -80,6 +108,26 @@
   "@sortDefault": {
     "description": "默认排序选项"
   },
+  "sortDateAddedDesc": "最近添加",
+  "@sortDateAddedDesc": {
+    "description": "按最近添加时间降序排序"
+  },
+  "sortDateAddedAsc": "最早添加",
+  "@sortDateAddedAsc": {
+    "description": "按添加时间升序排序"
+  },
+  "sortTitleZhAsc": "名称 A-Z",
+  "@sortTitleZhAsc": {
+    "description": "按名称拼音字母正序"
+  },
+  "sortTitleZhDesc": "名称 Z-A",
+  "@sortTitleZhDesc": {
+    "description": "按名称拼音字母倒序"
+  },
+  "sortEpisodesLeft": "剩余集数",
+  "@sortEpisodesLeft": {
+    "description": "按剩余集数排序"
+  },
   "sortRating": "评分最高",
   "@sortRating": {
     "description": "按评分降序排列"
@@ -111,6 +159,227 @@
   "finishWatching": "看完",
   "@finishWatching": {
     "description": "快捷标记全部看完按钮"
+  },
+  "completedEpisodes": "已完成 {count} 集",
+  "@completedEpisodes": {
+    "description": "已完成总集数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "remainingEpisodes": "剩 {count} 集",
+  "@remainingEpisodes": {
+    "description": "剩余集数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "watchedEpisodes": "已看 {count} 集",
+  "@watchedEpisodes": {
+    "description": "已看集数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notStartedYet": "尚未开始观看",
+  "@notStartedYet": {
+    "description": "尚未开始观看"
+  },
+  "completed": "已追完",
+  "@completed": {
+    "description": "已追完"
+  },
+  "justNow": "刚刚",
+  "@justNow": {
+    "description": "刚刚更新"
+  },
+  "minutesAgo": "{count}分钟前",
+  "@minutesAgo": {
+    "description": "若干分钟前",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{count}小时前",
+  "@hoursAgo": {
+    "description": "若干小时前",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{count}天前",
+  "@daysAgo": {
+    "description": "若干天前",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lastModified": "最后修改：{time}",
+  "@lastModified": {
+    "description": "最后修改时间提示",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteAnimeConfirm": "确定要删除「{title}」吗？此操作不可撤销。",
+  "@deleteAnimeConfirm": {
+    "description": "删除番剧确认提示",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "animeAddedSuccess": "「{title}」已添加",
+  "@animeAddedSuccess": {
+    "description": "添加成功通知",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "animeUpdatedSuccess": "「{title}」已更新",
+  "@animeUpdatedSuccess": {
+    "description": "更新成功通知",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "animeDeletedSuccess": "「{title}」已删除",
+  "@animeDeletedSuccess": {
+    "description": "删除成功通知",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "statusChangedWatched": "「{title}」已追完",
+  "@statusChangedWatched": {
+    "description": "状态流转为已追完通知",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "statusChangedWatching": "「{title}」状态已切换为「在看」",
+  "@statusChangedWatching": {
+    "description": "状态流转为在看通知",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "titleZhLabel": "中文名称",
+  "@titleZhLabel": {
+    "description": "中文名称标签"
+  },
+  "titleZhHint": "例：葬送的芙莉莲",
+  "@titleZhHint": {
+    "description": "中文名称输入提示"
+  },
+  "titleZhValidation": "请输入番剧名称",
+  "@titleZhValidation": {
+    "description": "中文名称校验报错"
+  },
+  "titleJaLabel": "日文原名",
+  "@titleJaLabel": {
+    "description": "日文原名标签"
+  },
+  "titleJaHint": "例：葬送のフリーレン",
+  "@titleJaHint": {
+    "description": "日文原名输入提示"
+  },
+  "coverUrlLabel": "封面链接",
+  "@coverUrlLabel": {
+    "description": "封面链接标签"
+  },
+  "coverUrlHint": "以 http:// 或 https:// 开头",
+  "@coverUrlHint": {
+    "description": "封面链接提示"
+  },
+  "coverUrlValidation": "封面链接必须是以 http:// 或 https:// 开头的有效网址",
+  "@coverUrlValidation": {
+    "description": "封面链接校验报错"
+  },
+  "watchStatusSelectLabel": "观看状态",
+  "@watchStatusSelectLabel": {
+    "description": "表单中的观看状态选择标签"
+  },
+  "airDaySelectLabel": "更新频率",
+  "@airDaySelectLabel": {
+    "description": "表单中的更新频率标签"
+  },
+  "airDayNone": "不设置",
+  "@airDayNone": {
+    "description": "不设置更新频率"
+  },
+  "airStatusSelectLabel": "播放状态",
+  "@airStatusSelectLabel": {
+    "description": "表单中的播放状态选择标签"
+  },
+  "airStatusNone": "不设置",
+  "@airStatusNone": {
+    "description": "不设置播放状态"
+  },
+  "episodesWatchedLabel": "已看集数",
+  "@episodesWatchedLabel": {
+    "description": "已看集数标签"
+  },
+  "episodesTotalLabel": "总集数",
+  "@episodesTotalLabel": {
+    "description": "总集数标签"
+  },
+  "episodesTotalHint": "0 表示未知或未完结",
+  "@episodesTotalHint": {
+    "description": "总集数输入提示"
+  },
+  "ratingLabel": "个人评分",
+  "@ratingLabel": {
+    "description": "个人评分标签"
+  },
+  "ratingHint": "0.0 表示未评分",
+  "@ratingHint": {
+    "description": "个人评分提示"
+  },
+  "tagsLabel": "标签分类",
+  "@tagsLabel": {
+    "description": "标签分类标签"
+  },
+  "notesLabel": "追番笔记与短评",
+  "@notesLabel": {
+    "description": "追番笔记标签"
+  },
+  "notesHint": "写点短评、追番感受或备忘...",
+  "@notesHint": {
+    "description": "追番笔记输入提示"
+  },
+  "advancedOptions": "更多高级选项",
+  "@advancedOptions": {
+    "description": "折叠高级选项"
+  },
+  "unnamedAnime": "未命名番剧",
+  "@unnamedAnime": {
+    "description": "未命名番剧默认占位名"
   },
   "notes": "备注",
   "@notes": {

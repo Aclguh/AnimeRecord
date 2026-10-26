@@ -40,6 +40,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get done => 'Done';
 
   @override
+  String get edit => 'Edit';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get reorder => 'Reorder';
+
+  @override
+  String get reorderTip => 'Drag handle on the right to reorder anime';
+
+  @override
+  String get loadMore => 'Load More';
+
+  @override
+  String get noMatchingAnime => 'No matching anime found';
+
+  @override
+  String get noMatchingAnimeSubtitle =>
+      'Try adjusting your filter or search keywords!';
+
+  @override
   String get totalRecords => 'Total';
 
   @override
@@ -70,6 +92,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sortDefault => 'Default';
 
   @override
+  String get sortDateAddedDesc => 'Recently Added';
+
+  @override
+  String get sortDateAddedAsc => 'Oldest Added';
+
+  @override
+  String get sortTitleZhAsc => 'Title A-Z';
+
+  @override
+  String get sortTitleZhDesc => 'Title Z-A';
+
+  @override
+  String get sortEpisodesLeft => 'Remaining Episodes';
+
+  @override
   String get sortRating => 'Highest Rating';
 
   @override
@@ -93,6 +130,150 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get finishWatching => 'Finish';
+
+  @override
+  String completedEpisodes(int count) {
+    return 'Completed $count eps';
+  }
+
+  @override
+  String remainingEpisodes(int count) {
+    return '$count left';
+  }
+
+  @override
+  String watchedEpisodes(int count) {
+    return 'Watched $count eps';
+  }
+
+  @override
+  String get notStartedYet => 'Not started';
+
+  @override
+  String get completed => 'Completed';
+
+  @override
+  String get justNow => 'Just now';
+
+  @override
+  String minutesAgo(int count) {
+    return '${count}m ago';
+  }
+
+  @override
+  String hoursAgo(int count) {
+    return '${count}h ago';
+  }
+
+  @override
+  String daysAgo(int count) {
+    return '${count}d ago';
+  }
+
+  @override
+  String lastModified(String time) {
+    return 'Last modified: $time';
+  }
+
+  @override
+  String deleteAnimeConfirm(String title) {
+    return 'Are you sure you want to delete \"$title\"? This action cannot be undone.';
+  }
+
+  @override
+  String animeAddedSuccess(String title) {
+    return 'Added \"$title\"';
+  }
+
+  @override
+  String animeUpdatedSuccess(String title) {
+    return 'Updated \"$title\"';
+  }
+
+  @override
+  String animeDeletedSuccess(String title) {
+    return 'Deleted \"$title\"';
+  }
+
+  @override
+  String statusChangedWatched(String title) {
+    return 'Finished watching \"$title\"';
+  }
+
+  @override
+  String statusChangedWatching(String title) {
+    return '\"$title\" switched to Watching';
+  }
+
+  @override
+  String get titleZhLabel => 'Chinese Title';
+
+  @override
+  String get titleZhHint => 'e.g. Frieren: Beyond Journey\'s End';
+
+  @override
+  String get titleZhValidation => 'Please enter anime title';
+
+  @override
+  String get titleJaLabel => 'Original Title (Japanese)';
+
+  @override
+  String get titleJaHint => 'e.g. 葬送のフリーレン';
+
+  @override
+  String get coverUrlLabel => 'Cover URL';
+
+  @override
+  String get coverUrlHint => 'Starts with http:// or https://';
+
+  @override
+  String get coverUrlValidation =>
+      'Cover URL must be a valid http:// or https:// link';
+
+  @override
+  String get watchStatusSelectLabel => 'Watch Status';
+
+  @override
+  String get airDaySelectLabel => 'Air Day';
+
+  @override
+  String get airDayNone => 'None';
+
+  @override
+  String get airStatusSelectLabel => 'Broadcast Status';
+
+  @override
+  String get airStatusNone => 'None';
+
+  @override
+  String get episodesWatchedLabel => 'Episodes Watched';
+
+  @override
+  String get episodesTotalLabel => 'Total Episodes';
+
+  @override
+  String get episodesTotalHint => '0 means ongoing/unknown';
+
+  @override
+  String get ratingLabel => 'Rating';
+
+  @override
+  String get ratingHint => '0.0 means unrated';
+
+  @override
+  String get tagsLabel => 'Tags';
+
+  @override
+  String get notesLabel => 'Notes & Review';
+
+  @override
+  String get notesHint => 'Write your review or thoughts...';
+
+  @override
+  String get advancedOptions => 'More Options';
+
+  @override
+  String get unnamedAnime => 'Untitled Anime';
 
   @override
   String get notes => 'Notes';
