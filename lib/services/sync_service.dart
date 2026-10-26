@@ -235,6 +235,10 @@ class SyncService {
       }
       final rawRes = await _client.get(parsedUri);
       if (rawRes.statusCode == 200) {
+        // 限制云端完整数据文件不超过 10MB，防止恶意伪造的大文件引发 OOM 崩溃
+        if (rawRes.bodyBytes.length > 10 * 1024 * 1024) {
+          throw const SyncDataFormatException('云端完整数据文件超过安全体积配额 (10MB)');
+        }
         content = utf8.decode(rawRes.bodyBytes);
       } else {
         throw Exception('拉取云端完整截断数据失败 (${rawRes.statusCode})');

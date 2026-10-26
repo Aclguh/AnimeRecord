@@ -43,6 +43,10 @@ abstract interface class IStorageService {
 class StorageService implements IStorageService {
   static const String storageKey = 'anime-record-records';
   static const String backupKey = 'anime-record-records-backup';
+  static const String rollingBackupPrefix = 'anime-record-records-backup-slot-';
+  static const String rollingBackupIndexKey = 'anime-record-records-backup-index';
+  static const int maxRollingBackups = 3;
+
   static const String versionKey = 'anime-record-version';
   static const String tombstonesKey = 'anime-record-tombstones';
   static const String defaultStatusKey = 'anime-record-default-status';
@@ -56,6 +60,7 @@ class StorageService implements IStorageService {
   static const String followScreenRotationKey = 'anime-record-follow-screen-rotation';
 
   static const int dataVersion = 1;
+  static const String _tokenFallbackPrefix = 'enc:v1:';
 
   final SharedPreferences _prefs;
   final FlutterSecureStorage _secureStorage;
@@ -63,6 +68,30 @@ class StorageService implements IStorageService {
 
   StorageService(this._prefs, [FlutterSecureStorage? secureStorage])
       : _secureStorage = secureStorage ?? const FlutterSecureStorage();
+
+  /// 对降级存储的敏感 Token 进行轻量应用级加密混淆，杜绝明文凭据落盘
+  static String _encryptFallback(String plain) {
+    if (plain.isEmpty) return '';
+    final bytes = utf8.encode(plain);
+    // 使用应用内特征掩码进行可逆异或混淆
+    const mask = 0x5A;
+    final obfuscated = bytes.map((b) => b ^ mask).toList();
+    return '$_tokenFallbackPrefix${base64Encode(obfuscated)}';
+  }
+
+  /// 解密还原降级存储的敏感 Token
+  static String _decryptFallback(String cipher) {
+    if (!cipher.startsWith(_tokenFallbackPrefix)) return cipher;
+    try {
+      final base64Str = cipher.substring(_tokenFallbackPrefix.length);
+      final bytes = base64Decode(base64Str);
+      const mask = 0x5A;
+      final deobfuscated = bytes.map((b) => b ^ mask).toList();
+      return utf8.decode(deobfuscated);
+    } catch (_) {
+      return '';
+    }
+  }
 
   static Future<StorageService> init({
     SharedPreferences? prefs,
@@ -77,19 +106,29 @@ class StorageService implements IStorageService {
       final token = await secure.read(key: syncTokenKey);
       if (token != null && token.isNotEmpty) {
         service._cachedToken = token;
+        // 确保清理历史残留的偏好键
+        await preferences.remove(syncTokenKey);
       } else {
-        // 迁移旧版存在于 SharedPreferences 的明文 token (若有)
+        // 检查是否存在降级或旧版明文存储
         final legacyToken = preferences.getString(syncTokenKey);
         if (legacyToken != null && legacyToken.isNotEmpty) {
-          service._cachedToken = legacyToken;
-          await secure.write(key: syncTokenKey, value: legacyToken);
-          await preferences.remove(syncTokenKey);
+          final actualToken = _decryptFallback(legacyToken);
+          service._cachedToken = actualToken;
+          try {
+            await secure.write(key: syncTokenKey, value: actualToken);
+            await preferences.remove(syncTokenKey);
+          } catch (_) {
+            // SecureStorage 仍不可用时，确保存储的是混淆密文而非裸明文
+            if (!legacyToken.startsWith(_tokenFallbackPrefix)) {
+              await preferences.setString(syncTokenKey, _encryptFallback(actualToken));
+            }
+          }
         }
       }
     } catch (e, st) {
-      // 在不支持 SecureStorage 的特殊虚拟环境回退到普通缓存并打印警告
-      debugPrint('StorageService: SecureStorage 初始化异常，回退读取普通缓存: $e\n$st');
-      service._cachedToken = preferences.getString(syncTokenKey) ?? '';
+      debugPrint('StorageService: SecureStorage 初始化异常，回退读取加密缓存: $e\n$st');
+      final raw = preferences.getString(syncTokenKey) ?? '';
+      service._cachedToken = _decryptFallback(raw);
     }
 
     return service;
@@ -117,7 +156,7 @@ class StorageService implements IStorageService {
         .toList();
   }
 
-  /// 读取所有记录（优先从主存储加载，主存储数据损坏时自动尝试从容灾备份快照恢复并自动修复）
+  /// 读取所有记录（优先从主存储加载，主存储损坏时依次从多版本循环滚动快照与容灾备份自愈修复）
   @override
   List<AnimeRecord> loadRecords() {
     final raw = _prefs.getString(storageKey);
@@ -129,7 +168,24 @@ class StorageService implements IStorageService {
       }
     }
 
-    // 尝试从备份快照恢复
+    // 1. 优先尝试从多版本循环滚动快照自愈（从最新槽位倒序查找有效快照）
+    final currentSlot = _prefs.getInt(rollingBackupIndexKey) ?? 0;
+    for (int i = 0; i < maxRollingBackups; i++) {
+      final slotIndex = (currentSlot - i + maxRollingBackups) % maxRollingBackups;
+      final slotRaw = _prefs.getString('$rollingBackupPrefix$slotIndex');
+      if (slotRaw != null && slotRaw.trim().isNotEmpty) {
+        try {
+          final restored = _parseJsonRecords(slotRaw);
+          if (restored.isNotEmpty) {
+            debugPrint('StorageService: 成功从滚动快照槽位 $slotIndex 恢复 ${restored.length} 条记录，自愈修复主存储...');
+            _prefs.setString(storageKey, slotRaw);
+            return restored;
+          }
+        } catch (_) {}
+      }
+    }
+
+    // 2. 尝试从单版本备份快照恢复
     try {
       final backupRaw = _prefs.getString(backupKey);
       if (backupRaw != null && backupRaw.trim().isNotEmpty) {
@@ -147,14 +203,20 @@ class StorageService implements IStorageService {
     return [];
   }
 
-  /// 保存所有记录（在写入新记录前自动保留上一份有效快照作为容灾备份）
+  /// 保存所有记录（在写入新记录前自动保留多版本滚动快照与容灾备份）
   @override
   Future<bool> saveRecords(List<AnimeRecord> records) async {
     try {
-      // 1. 若当前主存储存在有效数据，先转存为快照备份
+      // 1. 若当前主存储存在有效数据，转存为容灾备份快照并轮转滚动快照
       final currentRaw = _prefs.getString(storageKey);
       if (currentRaw != null && currentRaw.trim().isNotEmpty) {
         await _prefs.setString(backupKey, currentRaw);
+
+        // 轮转推进循环滚动快照槽位
+        final currentSlot = _prefs.getInt(rollingBackupIndexKey) ?? 0;
+        final nextSlot = (currentSlot + 1) % maxRollingBackups;
+        await _prefs.setString('$rollingBackupPrefix$nextSlot', currentRaw);
+        await _prefs.setInt(rollingBackupIndexKey, nextSlot);
       }
 
       final jsonList = records.map((r) => r.toJson()).toList();
@@ -380,11 +442,26 @@ class StorageService implements IStorageService {
     final token = config.token.trim();
     _cachedToken = token;
 
-    try {
-      await _secureStorage.write(key: syncTokenKey, value: token);
-    } catch (e, st) {
-      debugPrint('StorageService: 写入 SecureStorage 失败，回退写入 SharedPreferences: $e\n$st');
-      await _prefs.setString(syncTokenKey, token);
+    if (token.isEmpty) {
+      try {
+        await _secureStorage.delete(key: syncTokenKey);
+      } catch (_) {}
+      await _prefs.remove(syncTokenKey);
+    } else {
+      bool secureSaved = false;
+      try {
+        await _secureStorage.write(key: syncTokenKey, value: token);
+        secureSaved = true;
+        // 成功写入安全存储，移除偏好存储中可能存在的密文或明文，杜绝冗余落盘
+        await _prefs.remove(syncTokenKey);
+      } catch (e, st) {
+        debugPrint('StorageService: 写入 SecureStorage 失败，应用轻量级混淆加密后降级写入 SharedPreferences: $e\n$st');
+      }
+
+      if (!secureSaved) {
+        // 安全存储不可用时，存储混淆密文而非明文，防范未授权读取
+        await _prefs.setString(syncTokenKey, _encryptFallback(token));
+      }
     }
 
     await _prefs.setString(syncGistIdKey, config.gistId.trim());

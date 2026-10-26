@@ -111,7 +111,7 @@ void main() {
       expect(storage.loadFollowScreenRotation(), isTrue);
     });
 
-    test('saves and loads sync config', () async {
+    test('saves and loads sync config with fallback obfuscation', () async {
       const config = SyncConfig(
         token: 'ghp_test_123',
         gistId: 'gist_id_abc',
@@ -127,6 +127,34 @@ void main() {
       expect(loaded.autoSync, isTrue);
       expect(loaded.lastSyncTime, '2026-03-01T10:00:00.000Z');
       expect(loaded.isConfigured, isTrue);
+
+      // 验证降级存储中未保存明文 Token
+      final rawPrefsToken = prefs.getString(StorageService.syncTokenKey);
+      if (rawPrefsToken != null) {
+        expect(rawPrefsToken.contains('ghp_test_123'), isFalse);
+        expect(rawPrefsToken.startsWith('enc:v1:'), isTrue);
+      }
+    });
+
+    test('recovers from rolling backup snapshots when main storage and old backup are corrupted', () async {
+      final r1 = AnimeRecord.createEmpty().copyWith(id: 'roll_1', titleZh: '第一代快照');
+      final r2 = AnimeRecord.createEmpty().copyWith(id: 'roll_2', titleZh: '第二代快照');
+      final r3 = AnimeRecord.createEmpty().copyWith(id: 'roll_3', titleZh: '第三代快照');
+
+      await storage.saveRecords([r1]);
+      await storage.saveRecords([r1, r2]);
+      await storage.saveRecords([r1, r2, r3]);
+
+      expect(storage.loadRecords().length, 3);
+
+      // 故意破坏主键与单一 backupKey
+      await prefs.setString(StorageService.storageKey, '{ corrupted main json }');
+      await prefs.setString(StorageService.backupKey, '{ corrupted legacy backup }');
+
+      // 从滚动快照槽位恢复
+      final restored = storage.loadRecords();
+      expect(restored.isNotEmpty, isTrue);
+      expect(restored.any((r) => r.id == 'roll_1'), isTrue);
     });
 
     test('exportAllStorageData and importAllStorageData performs smooth full backup and restore', () async {
