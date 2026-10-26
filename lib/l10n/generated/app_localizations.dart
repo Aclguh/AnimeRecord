@@ -751,6 +751,234 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'确定要删除该番剧记录吗？删除后可在云端同步中同步删除。'**
   String get deleteConfirmMessage;
+
+  /// 云同步已连接状态
+  ///
+  /// In zh, this message translates to:
+  /// **'已连接'**
+  String get syncConnected;
+
+  /// 云同步未配置状态
+  ///
+  /// In zh, this message translates to:
+  /// **'未配置'**
+  String get syncNotConfigured;
+
+  /// 复制 Token 创建链接按钮
+  ///
+  /// In zh, this message translates to:
+  /// **'复制 Token 创建链接 ↗'**
+  String get copyTokenCreateLink;
+
+  /// Token 创建链接已复制提示
+  ///
+  /// In zh, this message translates to:
+  /// **'Token 创建链接已复制到剪贴板'**
+  String get tokenCopied;
+
+  /// Token 权限提示
+  ///
+  /// In zh, this message translates to:
+  /// **'仅需 gist 读写权限，安全保存在当前设备本地。'**
+  String get tokenPermissionHint;
+
+  /// Gist ID 提示
+  ///
+  /// In zh, this message translates to:
+  /// **'多台设备填写相同的 Gist ID 即可实现进度互通。'**
+  String get gistIdHint;
+
+  /// 打开应用时自动同步开关
+  ///
+  /// In zh, this message translates to:
+  /// **'打开应用时自动同步'**
+  String get autoSyncOnStartup;
+
+  /// 云同步安全说明
+  ///
+  /// In zh, this message translates to:
+  /// **'🛡️ 安全保障：采用时间戳双向增量合并机制，新设备首次同步优先拉取云端，绝不覆盖已有记录。'**
+  String get syncSafetyHint;
+
+  /// 本地数据说明
+  ///
+  /// In zh, this message translates to:
+  /// **'可导出本地 JSON 文件离线存档，或通过下载模板按格式整理番剧批量导入。'**
+  String get localDataHint;
+
+  /// 界面与显示分组标题
+  ///
+  /// In zh, this message translates to:
+  /// **'界面与显示'**
+  String get displaySettings;
+
+  /// 界面语言标题
+  ///
+  /// In zh, this message translates to:
+  /// **'界面语言'**
+  String get interfaceLanguage;
+
+  /// 界面语言副标题
+  ///
+  /// In zh, this message translates to:
+  /// **'选择应用的展示语言（支持跟随系统或手动切换）'**
+  String get interfaceLanguageSubtitle;
+
+  /// 跟随系统选项
+  ///
+  /// In zh, this message translates to:
+  /// **'跟随系统'**
+  String get followSystem;
+
+  /// 跟随屏幕旋转副标题
+  ///
+  /// In zh, this message translates to:
+  /// **'允许应用跟随屏幕方向旋转至横屏（默认关闭，保持竖屏锁定）'**
+  String get followScreenRotationSubtitle;
+
+  /// 默认打开页面说明
+  ///
+  /// In zh, this message translates to:
+  /// **'打开应用时默认展示「{category}」分类'**
+  String defaultOpenPageDescription(String category);
+
+  /// 云同步配置保存成功
+  ///
+  /// In zh, this message translates to:
+  /// **'云同步配置已保存'**
+  String get syncConfigSaved;
+
+  /// 请输入 GitHub Token 提示
+  ///
+  /// In zh, this message translates to:
+  /// **'请先输入 GitHub Token'**
+  String get syncTokenRequired;
+
+  /// 云同步测试连接成功提示
+  ///
+  /// In zh, this message translates to:
+  /// **'连接成功！GitHub 账号：{username}{gistInfo}'**
+  String syncConnectSuccess(String username, String gistInfo);
+
+  /// 云同步测试连接失败提示
+  ///
+  /// In zh, this message translates to:
+  /// **'测试失败：{error}'**
+  String syncConnectFailed(String error);
+
+  /// 自动创建 Gist 成功
+  ///
+  /// In zh, this message translates to:
+  /// **'已成功在 GitHub 创建私有 Gist 并完成绑定！'**
+  String get gistCreatedSuccess;
+
+  /// 创建 Gist 失败
+  ///
+  /// In zh, this message translates to:
+  /// **'创建 Gist 失败：{error}'**
+  String gistCreateFailed(String error);
+
+  /// 数据导出成功提示
+  ///
+  /// In zh, this message translates to:
+  /// **'已导出 {count} 条记录'**
+  String exportSuccess(int count);
+
+  /// 数据导出失败提示
+  ///
+  /// In zh, this message translates to:
+  /// **'导出失败：{error}'**
+  String exportFailed(String error);
+
+  /// 导入模板下载成功提示
+  ///
+  /// In zh, this message translates to:
+  /// **'导入模板已下载保存'**
+  String get templateExportSuccess;
+
+  /// 导出模板失败提示
+  ///
+  /// In zh, this message translates to:
+  /// **'导出模板失败：{error}'**
+  String templateExportFailed(String error);
+
+  /// 导入数据弹窗标题
+  ///
+  /// In zh, this message translates to:
+  /// **'导入数据'**
+  String get importDialogTitle;
+
+  /// 发现待导入记录条数
+  ///
+  /// In zh, this message translates to:
+  /// **'发现 {count} 条待导入记录。'**
+  String importDialogFound(int count);
+
+  /// 当前已有记录条数
+  ///
+  /// In zh, this message translates to:
+  /// **'当前已有 {count} 条记录。'**
+  String importDialogCurrent(int count);
+
+  /// 导入方式选择提示
+  ///
+  /// In zh, this message translates to:
+  /// **'请选择导入方式：'**
+  String get importDialogSelectMode;
+
+  /// 合并导入操作按钮
+  ///
+  /// In zh, this message translates to:
+  /// **'合并导入'**
+  String get importMerge;
+
+  /// 替换全部操作按钮
+  ///
+  /// In zh, this message translates to:
+  /// **'替换全部'**
+  String get importReplace;
+
+  /// 替换导入成功提示
+  ///
+  /// In zh, this message translates to:
+  /// **'已替换导入 {count} 条记录'**
+  String importReplaceSuccess(int count);
+
+  /// 合并导入成功提示
+  ///
+  /// In zh, this message translates to:
+  /// **'已成功合并导入记录'**
+  String get importMergeSuccess;
+
+  /// 导入保存失败提示
+  ///
+  /// In zh, this message translates to:
+  /// **'导入保存失败'**
+  String get importSaveFailed;
+
+  /// 导入失败提示
+  ///
+  /// In zh, this message translates to:
+  /// **'导入失败：{error}'**
+  String importFailed(String error);
+
+  /// 断崖跌落保护弹窗标题
+  ///
+  /// In zh, this message translates to:
+  /// **'同步数据保护提醒'**
+  String get cliffTitle;
+
+  /// 断崖跌落保护弹窗正文
+  ///
+  /// In zh, this message translates to:
+  /// **'检测到云端与本地合并后数据量骤降（原基准为 {baseline} 部，合并后仅剩 {merged} 部）。\n\n这通常发生在误清空或更换空 Gist 时。若这是您的预期删除操作，请选择「强制覆盖同步」。'**
+  String cliffMessage(int baseline, int merged);
+
+  /// 强制同步按钮文案
+  ///
+  /// In zh, this message translates to:
+  /// **'强制覆盖同步'**
+  String get cliffForceSync;
 }
 
 class _AppLocalizationsDelegate

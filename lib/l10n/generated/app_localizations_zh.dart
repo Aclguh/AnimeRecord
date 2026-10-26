@@ -361,4 +361,142 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get deleteConfirmMessage => '确定要删除该番剧记录吗？删除后可在云端同步中同步删除。';
+
+  @override
+  String get syncConnected => '已连接';
+
+  @override
+  String get syncNotConfigured => '未配置';
+
+  @override
+  String get copyTokenCreateLink => '复制 Token 创建链接 ↗';
+
+  @override
+  String get tokenCopied => 'Token 创建链接已复制到剪贴板';
+
+  @override
+  String get tokenPermissionHint => '仅需 gist 读写权限，安全保存在当前设备本地。';
+
+  @override
+  String get gistIdHint => '多台设备填写相同的 Gist ID 即可实现进度互通。';
+
+  @override
+  String get autoSyncOnStartup => '打开应用时自动同步';
+
+  @override
+  String get syncSafetyHint => '🛡️ 安全保障：采用时间戳双向增量合并机制，新设备首次同步优先拉取云端，绝不覆盖已有记录。';
+
+  @override
+  String get localDataHint => '可导出本地 JSON 文件离线存档，或通过下载模板按格式整理番剧批量导入。';
+
+  @override
+  String get displaySettings => '界面与显示';
+
+  @override
+  String get interfaceLanguage => '界面语言';
+
+  @override
+  String get interfaceLanguageSubtitle => '选择应用的展示语言（支持跟随系统或手动切换）';
+
+  @override
+  String get followSystem => '跟随系统';
+
+  @override
+  String get followScreenRotationSubtitle => '允许应用跟随屏幕方向旋转至横屏（默认关闭，保持竖屏锁定）';
+
+  @override
+  String defaultOpenPageDescription(String category) {
+    return '打开应用时默认展示「$category」分类';
+  }
+
+  @override
+  String get syncConfigSaved => '云同步配置已保存';
+
+  @override
+  String get syncTokenRequired => '请先输入 GitHub Token';
+
+  @override
+  String syncConnectSuccess(String username, String gistInfo) {
+    return '连接成功！GitHub 账号：$username$gistInfo';
+  }
+
+  @override
+  String syncConnectFailed(String error) {
+    return '测试失败：$error';
+  }
+
+  @override
+  String get gistCreatedSuccess => '已成功在 GitHub 创建私有 Gist 并完成绑定！';
+
+  @override
+  String gistCreateFailed(String error) {
+    return '创建 Gist 失败：$error';
+  }
+
+  @override
+  String exportSuccess(int count) {
+    return '已导出 $count 条记录';
+  }
+
+  @override
+  String exportFailed(String error) {
+    return '导出失败：$error';
+  }
+
+  @override
+  String get templateExportSuccess => '导入模板已下载保存';
+
+  @override
+  String templateExportFailed(String error) {
+    return '导出模板失败：$error';
+  }
+
+  @override
+  String get importDialogTitle => '导入数据';
+
+  @override
+  String importDialogFound(int count) {
+    return '发现 $count 条待导入记录。';
+  }
+
+  @override
+  String importDialogCurrent(int count) {
+    return '当前已有 $count 条记录。';
+  }
+
+  @override
+  String get importDialogSelectMode => '请选择导入方式：';
+
+  @override
+  String get importMerge => '合并导入';
+
+  @override
+  String get importReplace => '替换全部';
+
+  @override
+  String importReplaceSuccess(int count) {
+    return '已替换导入 $count 条记录';
+  }
+
+  @override
+  String get importMergeSuccess => '已成功合并导入记录';
+
+  @override
+  String get importSaveFailed => '导入保存失败';
+
+  @override
+  String importFailed(String error) {
+    return '导入失败：$error';
+  }
+
+  @override
+  String get cliffTitle => '同步数据保护提醒';
+
+  @override
+  String cliffMessage(int baseline, int merged) {
+    return '检测到云端与本地合并后数据量骤降（原基准为 $baseline 部，合并后仅剩 $merged 部）。\n\n这通常发生在误清空或更换空 Gist 时。若这是您的预期删除操作，请选择「强制覆盖同步」。';
+  }
+
+  @override
+  String get cliffForceSync => '强制覆盖同步';
 }

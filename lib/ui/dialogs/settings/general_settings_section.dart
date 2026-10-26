@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/l10n.dart';
 import '../../../models/app_constants.dart';
 
 /// 设置弹窗 - 通用设置部分（默认打开状态与屏幕旋转偏好）
@@ -26,26 +27,27 @@ class GeneralSettingsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
 
     final statusOptions = [
-      ('all', '全部'),
-      (AnimeStatus.wantToWatch, '想看'),
-      (AnimeStatus.watching, '在看'),
-      (AnimeStatus.watched, '看过'),
-      (AnimeStatus.onHold, '搁置'),
-      (AnimeStatus.dropped, '抛弃'),
+      ('all', l10n?.statusAll ?? '全部'),
+      (AnimeStatus.wantToWatch, l10n?.statusWantToWatch ?? '想看'),
+      (AnimeStatus.watching, l10n?.statusWatching ?? '在看'),
+      (AnimeStatus.watched, l10n?.statusWatched ?? '看过'),
+      (AnimeStatus.onHold, l10n?.statusOnHold ?? '搁置'),
+      (AnimeStatus.dropped, l10n?.statusDropped ?? '抛弃'),
     ];
 
     final currentOption = statusOptions.firstWhere(
       (e) => e.$1 == defaultStatus,
-      orElse: () => ('watching', '在看'),
+      orElse: () => ('watching', l10n?.statusWatching ?? '在看'),
     );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // 1. 默认打开的页面
-        _buildSectionHeader(context, '默认打开的页面'),
+        _buildSectionHeader(context, l10n?.generalSettings ?? '默认打开的页面'),
         const SizedBox(height: 10),
         Wrap(
           spacing: 8,
@@ -82,7 +84,8 @@ class GeneralSettingsSection extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          '打开应用时默认展示「${currentOption.$2}」分类',
+          l10n?.defaultOpenPageDescription(currentOption.$2) ??
+              '打开应用时默认展示「${currentOption.$2}」分类',
           style: TextStyle(
             fontSize: 12,
             color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
@@ -93,7 +96,7 @@ class GeneralSettingsSection extends StatelessWidget {
         const SizedBox(height: 18),
 
         // 2. 界面与显示设置（跟随屏幕选择与多语言）
-        _buildSectionHeader(context, '界面与显示'),
+        _buildSectionHeader(context, l10n?.displaySettings ?? '界面与显示'),
         const SizedBox(height: 10),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -113,7 +116,7 @@ class GeneralSettingsSection extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '界面语言',
+                            l10n?.interfaceLanguage ?? '界面语言',
                             style: TextStyle(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w600,
@@ -122,7 +125,7 @@ class GeneralSettingsSection extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '选择应用的展示语言（支持跟随系统或手动切换）',
+                            l10n?.interfaceLanguageSubtitle ?? '选择应用的展示语言（支持跟随系统或手动切换）',
                             style: TextStyle(
                               fontSize: 11.5,
                               color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
@@ -140,10 +143,10 @@ class GeneralSettingsSection extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: theme.colorScheme.primary,
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 'system', child: Text('跟随系统')),
-                        DropdownMenuItem(value: 'zh', child: Text('简体中文')),
-                        DropdownMenuItem(value: 'en', child: Text('English')),
+                      items: [
+                        DropdownMenuItem(value: 'system', child: Text(l10n?.followSystem ?? '跟随系统')),
+                        const DropdownMenuItem(value: 'zh', child: Text('简体中文')),
+                        const DropdownMenuItem(value: 'en', child: Text('English')),
                       ],
                       onChanged: (val) {
                         if (val != null) onLocaleChanged!(val);
@@ -160,7 +163,7 @@ class GeneralSettingsSection extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '跟随屏幕选择',
+                          l10n?.followScreenRotation ?? '跟随屏幕选择',
                           style: TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w600,
@@ -169,7 +172,8 @@ class GeneralSettingsSection extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '允许应用跟随屏幕方向旋转至横屏（默认关闭，保持竖屏锁定）',
+                          l10n?.followScreenRotationSubtitle ??
+                              '允许应用跟随屏幕方向旋转至横屏（默认关闭，保持竖屏锁定）',
                           style: TextStyle(
                             fontSize: 11.5,
                             color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),

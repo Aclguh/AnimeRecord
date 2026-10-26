@@ -1,3 +1,4 @@
+import 'package:anime_record/l10n/l10n.dart';
 import 'package:anime_record/models/anime_record.dart';
 import 'package:anime_record/models/app_constants.dart';
 import 'package:anime_record/services/storage_service.dart';
@@ -25,10 +26,16 @@ void main() {
     themeProvider = ThemeProvider(storage);
   });
 
-  Widget createTestApp() {
+  Widget createTestApp({
+    AnimeProvider? customAnimeProvider,
+    Locale locale = const Locale('zh'),
+  }) {
     return MaterialApp(
+      locale: locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: HomeScreen(
-        animeProvider: animeProvider,
+        animeProvider: customAnimeProvider ?? animeProvider,
         themeProvider: themeProvider,
       ),
     );
@@ -44,7 +51,7 @@ void main() {
       await tester.pumpWidget(createTestApp());
       await tester.pumpAndSettle();
 
-      expect(find.text('还没有番剧记录'), findsOneWidget);
+      expect(find.text('暂无番剧记录'), findsOneWidget);
 
       // Tap add first anime button
       await tester.tap(find.text('添加第一部番剧'));
@@ -146,6 +153,186 @@ void main() {
 
       // 退出排序模式，还原为网格视图
       expect(find.byType(ReorderableListView), findsNothing);
+    });
+
+    testWidgets('triggers export shortcut on Ctrl+S', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle();
+
+      // Trigger Ctrl+S shortcut
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('triggers sync via app bar sync button', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle();
+
+      final syncBtn = find.byIcon(Icons.sync_rounded);
+      expect(syncBtn, findsOneWidget);
+      await tester.tap(syncBtn);
+      for (int i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      expect(find.textContaining('请先配置 GitHub Token'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 4)); // drain Toast timer
+    });
+
+    testWidgets('edits anime record via card edit button', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final record = AnimeRecord.createEmpty().copyWith(
+        id: 'edit_target',
+        titleZh: '待编辑番剧',
+        status: AnimeStatus.watching,
+      );
+      await animeProvider.addRecord(record);
+
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle();
+
+      // Tap edit button on AnimeCard
+      final editBtn = find.byIcon(Icons.edit_outlined);
+      expect(editBtn, findsOneWidget);
+      await tester.tap(editBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AnimeFormDialog), findsOneWidget);
+      expect(find.text('编辑番剧'), findsOneWidget);
+    });
+
+    testWidgets('deletes anime record via card delete button and confirm dialog', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final record = AnimeRecord.createEmpty().copyWith(
+        id: 'del_target',
+        titleZh: '待删除番剧',
+        status: AnimeStatus.watching,
+      );
+      await animeProvider.addRecord(record);
+
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle();
+
+      // Tap delete button on card
+      final delBtn = find.byIcon(Icons.delete_outline_rounded);
+      expect(delBtn, findsOneWidget);
+      await tester.tap(delBtn);
+      await tester.pumpAndSettle();
+
+      // Confirm dialog appears
+      expect(find.text('删除番剧'), findsOneWidget);
+      expect(find.text('确定要删除「待删除番剧」吗？此操作不可撤销。'), findsOneWidget);
+
+      // Confirm deletion
+      await tester.tap(find.text('确认'));
+      await tester.pumpAndSettle();
+
+      expect(animeProvider.allRecords, isEmpty);
+      expect(find.text('「待删除番剧」已删除'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 4)); // drain Toast timer
+    });
+
+    testWidgets('filters anime records by search query and clears search', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await animeProvider.addRecord(AnimeRecord.createEmpty().copyWith(
+        id: 's1',
+        titleZh: '魔法少女小圆',
+        status: AnimeStatus.watching,
+      ));
+      await animeProvider.addRecord(AnimeRecord.createEmpty().copyWith(
+        id: 's2',
+        titleZh: '命运石之门',
+        status: AnimeStatus.watching,
+      ));
+
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle();
+
+      expect(find.text('魔法少女小圆'), findsOneWidget);
+      expect(find.text('命运石之门'), findsOneWidget);
+
+      // Search '小圆'
+      final searchField = find.byType(TextField).first;
+      await tester.enterText(searchField, '小圆');
+      await tester.pump(const Duration(milliseconds: 350)); // debounce
+      await tester.pumpAndSettle();
+
+      expect(find.text('魔法少女小圆'), findsOneWidget);
+      expect(find.text('命运石之门'), findsNothing);
+
+      // Tap clear search button
+      final clearBtn = find.byIcon(Icons.close_rounded);
+      expect(clearBtn, findsOneWidget);
+      await tester.tap(clearBtn);
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+
+      expect(find.text('魔法少女小圆'), findsOneWidget);
+      expect(find.text('命运石之门'), findsOneWidget);
+    });
+
+    testWidgets('filters anime records by weekday chips', (tester) async {
+      tester.view.physicalSize = const Size(1200, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await animeProvider.addRecord(AnimeRecord.createEmpty().copyWith(
+        id: 'w1',
+        titleZh: '周一番剧',
+        status: AnimeStatus.watching,
+        week: WeekDay.mon,
+      ));
+      await animeProvider.addRecord(AnimeRecord.createEmpty().copyWith(
+        id: 'w2',
+        titleZh: '周二番剧',
+        status: AnimeStatus.watching,
+        week: WeekDay.tue,
+      ));
+
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle();
+
+      expect(find.text('周一番剧'), findsOneWidget);
+      expect(find.text('周二番剧'), findsOneWidget);
+
+      // Tap Monday filter chip
+      await tester.tap(find.text('周一').first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('周一番剧'), findsOneWidget);
+      expect(find.text('周二番剧'), findsNothing);
+
+      // Tap Monday again to unselect
+      await tester.tap(find.text('周一').first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('周一番剧'), findsOneWidget);
+      expect(find.text('周二番剧'), findsOneWidget);
     });
   });
 }

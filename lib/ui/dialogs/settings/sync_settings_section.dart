@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../l10n/l10n.dart';
 import '../../widgets/toast_overlay.dart';
 
 /// 设置弹窗 - 云端同步部分 (GitHub Gist 配置与操作)
@@ -48,6 +49,7 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -56,15 +58,19 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
           children: [
             Icon(Icons.cloud_sync_outlined, size: 18, color: theme.colorScheme.primary),
             const SizedBox(width: 8),
-            Text(
-              '云端同步（GitHub Gist）',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430),
+            Expanded(
+              child: Text(
+                l10n?.cloudSync ?? '云端同步（GitHub Gist）',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? const Color(0xFFE8EAF1) : const Color(0xFF1F2430),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            const Spacer(),
+            const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
@@ -74,7 +80,9 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                widget.isConfigured ? '已连接' : '未配置',
+                widget.isConfigured
+                    ? (l10n?.syncConnected ?? '已连接')
+                    : (l10n?.syncNotConfigured ?? '未配置'),
                 style: TextStyle(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,
@@ -105,10 +113,14 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
                 Clipboard.setData(const ClipboardData(
                   text: 'https://github.com/settings/tokens/new?description=anime-record-sync&scopes=gist',
                 ));
-                Toast.show(context, 'Token 创建链接已复制到剪贴板', type: ToastType.info);
+                Toast.show(
+                  context,
+                  l10n?.tokenCopied ?? 'Token 创建链接已复制到剪贴板',
+                  type: ToastType.info,
+                );
               },
               child: Text(
-                '复制 Token 创建链接 ↗',
+                l10n?.copyTokenCreateLink ?? '复制 Token 创建链接 ↗',
                 style: TextStyle(
                   fontSize: 12,
                   color: theme.colorScheme.primary,
@@ -137,7 +149,7 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
         ),
         const SizedBox(height: 4),
         Text(
-          '仅需 gist 读写权限，安全保存在当前设备本地。',
+          l10n?.tokenPermissionHint ?? '仅需 gist 读写权限，安全保存在当前设备本地。',
           style: TextStyle(
             fontSize: 11.5,
             color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
@@ -174,13 +186,13 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
                       height: 14,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('自动新建 Gist'),
+                  : Text(l10n?.autoCreateGist ?? '自动新建 Gist'),
             ),
           ],
         ),
         const SizedBox(height: 4),
         Text(
-          '多台设备填写相同的 Gist ID 即可实现进度互通。',
+          l10n?.gistIdHint ?? '多台设备填写相同的 Gist ID 即可实现进度互通。',
           style: TextStyle(
             fontSize: 11.5,
             color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
@@ -195,8 +207,15 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
               value: widget.autoSync,
               onChanged: (val) => widget.onAutoSyncChanged(val ?? false),
             ),
-            const Text('打开应用时自动同步', style: TextStyle(fontSize: 13)),
-            const Spacer(),
+            Expanded(
+              child: Text(
+                l10n?.autoSyncOnStartup ?? '打开应用时自动同步',
+                style: const TextStyle(fontSize: 13),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
             OutlinedButton(
               onPressed: widget.isTestingSync ? null : widget.onTestSync,
               child: widget.isTestingSync
@@ -205,7 +224,7 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
                       height: 14,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('测试连接'),
+                  : Text(l10n?.testConnection ?? '测试连接'),
             ),
           ],
         ),
@@ -225,7 +244,7 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
               Row(
                 children: [
                   Text(
-                    '上次同步：',
+                    l10n?.lastSync ?? '上次同步：',
                     style: TextStyle(
                       fontSize: 11.5,
                       color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),
@@ -236,7 +255,7 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
                     child: Text(
                       widget.lastSyncTime.isNotEmpty
                           ? widget.lastSyncTime.replaceFirst('T', ' ').split('.').first
-                          : '从未同步',
+                          : (l10n?.neverSynced ?? '从未同步'),
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
@@ -252,7 +271,7 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: widget.onSaveSyncSettings,
-                      child: const Text('保存配置'),
+                      child: Text(l10n?.saveConfig ?? '保存配置'),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -269,7 +288,7 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
                               ),
                             )
                           : const Icon(Icons.sync_rounded, size: 16),
-                      label: const Text('立即同步'),
+                      label: Text(l10n?.syncNow ?? '立即同步'),
                     ),
                   ),
                 ],
@@ -279,7 +298,8 @@ class _SyncSettingsSectionState extends State<SyncSettingsSection> {
         ),
         const SizedBox(height: 8),
         Text(
-          '🛡️ 安全保障：采用时间戳双向增量合并机制，新设备首次同步优先拉取云端，绝不覆盖已有记录。',
+          l10n?.syncSafetyHint ??
+              '🛡️ 安全保障：采用时间戳双向增量合并机制，新设备首次同步优先拉取云端，绝不覆盖已有记录。',
           style: TextStyle(
             fontSize: 11.5,
             color: isDark ? const Color(0xFF6E7688) : const Color(0xFF98A0B3),

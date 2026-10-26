@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../l10n/l10n.dart';
 import '../../services/import_export_service.dart';
 import '../../services/sync_service.dart';
 import '../../state/anime_provider.dart';
@@ -80,16 +81,18 @@ class _SettingsDialogState extends State<SettingsDialog> {
     );
     widget.animeProvider.setSyncConfig(updated);
     if (showToastMessage && mounted) {
-      Toast.show(context, '云同步配置已保存', type: ToastType.success);
+      final l10n = AppLocalizations.of(context);
+      Toast.show(context, l10n?.syncConfigSaved ?? '云同步配置已保存', type: ToastType.success);
     }
   }
 
   Future<void> _testSync() async {
     final token = _tokenController.text.trim();
     final gistId = _gistIdController.text.trim();
+    final l10n = AppLocalizations.of(context);
 
     if (token.isEmpty) {
-      Toast.show(context, '请先输入 GitHub Token', type: ToastType.info);
+      Toast.show(context, l10n?.syncTokenRequired ?? '请先输入 GitHub Token', type: ToastType.info);
       return;
     }
 
@@ -104,7 +107,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
       if (mounted) {
         Toast.show(
           context,
-          '连接成功！GitHub 账号：$username$gistInfo',
+          l10n?.syncConnectSuccess(username, gistInfo) ?? '连接成功！GitHub 账号：$username$gistInfo',
           type: ToastType.success,
         );
       }
@@ -113,7 +116,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
         final msg = e is SyncException ? e.message : e.toString().replaceFirst('Exception: ', '');
         Toast.show(
           context,
-          '测试失败：$msg',
+          l10n?.syncConnectFailed(msg) ?? '测试失败：$msg',
           type: ToastType.error,
         );
       }
@@ -124,8 +127,9 @@ class _SettingsDialogState extends State<SettingsDialog> {
 
   Future<void> _createGist() async {
     final token = _tokenController.text.trim();
+    final l10n = AppLocalizations.of(context);
     if (token.isEmpty) {
-      Toast.show(context, '请先填写 GitHub Token', type: ToastType.error);
+      Toast.show(context, l10n?.syncTokenRequired ?? '请先输入 GitHub Token', type: ToastType.error);
       return;
     }
 
@@ -138,7 +142,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
       if (mounted) {
         Toast.show(
           context,
-          '已成功在 GitHub 创建私有 Gist 并完成绑定！',
+          l10n?.gistCreatedSuccess ?? '已成功在 GitHub 创建私有 Gist 并完成绑定！',
           type: ToastType.success,
         );
       }
@@ -147,7 +151,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
         final msg = e is SyncException ? e.message : e.toString().replaceFirst('Exception: ', '');
         Toast.show(
           context,
-          '创建 Gist 失败：$msg',
+          l10n?.gistCreateFailed(msg) ?? '创建 Gist 失败：$msg',
           type: ToastType.error,
         );
       }
@@ -158,17 +162,19 @@ class _SettingsDialogState extends State<SettingsDialog> {
 
   Future<void> _syncNow() async {
     _saveSyncSettings(showToastMessage: false);
+    final l10n = AppLocalizations.of(context);
     final res = await widget.animeProvider.performSync(silent: false);
     if (!mounted) return;
 
     if (res.isCliff) {
       final confirmForce = await ConfirmDialog.show(
         context,
-        title: '同步数据保护提醒',
-        message: '检测到云端与本地合并后数据量骤降（原基准为 ${res.baselineCount} 部，合并后仅剩 ${res.mergedCount} 部）。\n\n'
+        title: l10n?.cliffTitle ?? '同步数据保护提醒',
+        message: l10n?.cliffMessage(res.baselineCount, res.mergedCount) ??
+            '检测到云端与本地合并后数据量骤降（原基准为 ${res.baselineCount} 部，合并后仅剩 ${res.mergedCount} 部）。\n\n'
             '这通常发生在误清空或更换空 Gist 时。若这是您的预期删除操作，请选择「强制覆盖同步」。',
-        confirmText: '强制覆盖同步',
-        cancelText: '取消',
+        confirmText: l10n?.cliffForceSync ?? '强制覆盖同步',
+        cancelText: l10n?.cancel ?? '取消',
         isDestructive: true,
       );
 
@@ -193,6 +199,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
   }
 
   Future<void> _handleExportData() async {
+    final l10n = AppLocalizations.of(context);
     try {
       final records = widget.animeProvider.allRecords;
       final jsonStr = await ImportExportService.exportToJsonAsync(records);
@@ -204,16 +211,25 @@ class _SettingsDialogState extends State<SettingsDialog> {
         content: jsonStr,
       );
       if (mounted && path != null) {
-        Toast.show(context, '已导出 ${records.length} 条记录', type: ToastType.success);
+        Toast.show(
+          context,
+          l10n?.exportSuccess(records.length) ?? '已导出 ${records.length} 条记录',
+          type: ToastType.success,
+        );
       }
     } catch (e) {
       if (mounted) {
-        Toast.show(context, '导出失败：$e', type: ToastType.error);
+        Toast.show(
+          context,
+          l10n?.exportFailed(e.toString()) ?? '导出失败：$e',
+          type: ToastType.error,
+        );
       }
     }
   }
 
   Future<void> _handleExportTemplate() async {
+    final l10n = AppLocalizations.of(context);
     try {
       final jsonStr = ImportExportService.exportTemplateJson();
       final path = await ImportExportService.saveJsonFile(
@@ -221,16 +237,25 @@ class _SettingsDialogState extends State<SettingsDialog> {
         content: jsonStr,
       );
       if (mounted && path != null) {
-        Toast.show(context, '导入模板已下载保存', type: ToastType.success);
+        Toast.show(
+          context,
+          l10n?.templateExportSuccess ?? '导入模板已下载保存',
+          type: ToastType.success,
+        );
       }
     } catch (e) {
       if (mounted) {
-        Toast.show(context, '导出模板失败：$e', type: ToastType.error);
+        Toast.show(
+          context,
+          l10n?.templateExportFailed(e.toString()) ?? '导出模板失败：$e',
+          type: ToastType.error,
+        );
       }
     }
   }
 
   Future<void> _handleImportData() async {
+    final l10n = AppLocalizations.of(context);
     try {
       final jsonStr = await ImportExportService.pickJsonFile();
       if (jsonStr == null || jsonStr.trim().isEmpty) return;
@@ -243,24 +268,24 @@ class _SettingsDialogState extends State<SettingsDialog> {
         final choice = await showDialog<String>(
           context: context,
           builder: (ctx) => ConfirmDialog(
-            title: '导入数据',
+            title: l10n?.importDialogTitle ?? '导入数据',
             customContent: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('发现 ${incoming.length} 条待导入记录。'),
+                Text(l10n?.importDialogFound(incoming.length) ?? '发现 ${incoming.length} 条待导入记录。'),
                 const SizedBox(height: 4),
-                Text('当前已有 ${current.length} 条记录。'),
+                Text(l10n?.importDialogCurrent(current.length) ?? '当前已有 ${current.length} 条记录。'),
                 const SizedBox(height: 10),
-                const Text('请选择导入方式：'),
+                Text(l10n?.importDialogSelectMode ?? '请选择导入方式：'),
               ],
             ),
-            cancelText: '取消',
-            confirmText: '合并导入',
+            cancelText: l10n?.cancel ?? '取消',
+            confirmText: l10n?.importMerge ?? '合并导入',
             extraActions: [
               OutlinedButton(
                 onPressed: () => Navigator.of(ctx).pop('replace'),
-                child: const Text('替换全部'),
+                child: Text(l10n?.importReplace ?? '替换全部'),
               ),
             ],
           ),
@@ -275,18 +300,21 @@ class _SettingsDialogState extends State<SettingsDialog> {
         if (ok) {
           Toast.show(
             context,
-            replaceMode ? '已替换导入 ${incoming.length} 条记录' : '已成功合并导入记录',
+            replaceMode
+                ? (l10n?.importReplaceSuccess(incoming.length) ?? '已替换导入 ${incoming.length} 条记录')
+                : (l10n?.importMergeSuccess ?? '已成功合并导入记录'),
             type: ToastType.success,
           );
         } else {
-          Toast.show(context, '导入保存失败', type: ToastType.error);
+          Toast.show(context, l10n?.importSaveFailed ?? '导入保存失败', type: ToastType.error);
         }
       }
     } catch (e) {
       if (mounted) {
+        final errText = e.toString().replaceFirst('Exception: ', '');
         Toast.show(
           context,
-          '导入失败：${e.toString().replaceFirst('Exception: ', '')}',
+          l10n?.importFailed(errText) ?? '导入失败：$errText',
           type: ToastType.error,
         );
       }
@@ -315,7 +343,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                   Icon(Icons.settings_outlined, size: 20, color: theme.colorScheme.primary),
                   const SizedBox(width: 8),
                   Text(
-                    '设置',
+                    AppLocalizations.of(context)?.settings ?? '设置',
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 19,
@@ -399,6 +427,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                                 autoSync: _autoSync,
                                 onAutoSyncChanged: (val) {
                                   setState(() => _autoSync = val);
+                                  _saveSyncSettings(showToastMessage: false);
                                 },
                                 isConfigured: provider.syncConfig.isConfigured,
                                 isSyncing: provider.isSyncing,

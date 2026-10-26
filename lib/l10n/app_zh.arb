@@ -500,5 +500,223 @@
   "deleteConfirmMessage": "确定要删除该番剧记录吗？删除后可在云端同步中同步删除。",
   "@deleteConfirmMessage": {
     "description": "删除确认弹窗正文"
+  },
+  "syncConnected": "已连接",
+  "@syncConnected": {
+    "description": "云同步已连接状态"
+  },
+  "syncNotConfigured": "未配置",
+  "@syncNotConfigured": {
+    "description": "云同步未配置状态"
+  },
+  "copyTokenCreateLink": "复制 Token 创建链接 ↗",
+  "@copyTokenCreateLink": {
+    "description": "复制 Token 创建链接按钮"
+  },
+  "tokenCopied": "Token 创建链接已复制到剪贴板",
+  "@tokenCopied": {
+    "description": "Token 创建链接已复制提示"
+  },
+  "tokenPermissionHint": "仅需 gist 读写权限，安全保存在当前设备本地。",
+  "@tokenPermissionHint": {
+    "description": "Token 权限提示"
+  },
+  "gistIdHint": "多台设备填写相同的 Gist ID 即可实现进度互通。",
+  "@gistIdHint": {
+    "description": "Gist ID 提示"
+  },
+  "autoSyncOnStartup": "打开应用时自动同步",
+  "@autoSyncOnStartup": {
+    "description": "打开应用时自动同步开关"
+  },
+  "syncSafetyHint": "🛡️ 安全保障：采用时间戳双向增量合并机制，新设备首次同步优先拉取云端，绝不覆盖已有记录。",
+  "@syncSafetyHint": {
+    "description": "云同步安全说明"
+  },
+  "localDataHint": "可导出本地 JSON 文件离线存档，或通过下载模板按格式整理番剧批量导入。",
+  "@localDataHint": {
+    "description": "本地数据说明"
+  },
+  "displaySettings": "界面与显示",
+  "@displaySettings": {
+    "description": "界面与显示分组标题"
+  },
+  "interfaceLanguage": "界面语言",
+  "@interfaceLanguage": {
+    "description": "界面语言标题"
+  },
+  "interfaceLanguageSubtitle": "选择应用的展示语言（支持跟随系统或手动切换）",
+  "@interfaceLanguageSubtitle": {
+    "description": "界面语言副标题"
+  },
+  "followSystem": "跟随系统",
+  "@followSystem": {
+    "description": "跟随系统选项"
+  },
+  "followScreenRotationSubtitle": "允许应用跟随屏幕方向旋转至横屏（默认关闭，保持竖屏锁定）",
+  "@followScreenRotationSubtitle": {
+    "description": "跟随屏幕旋转副标题"
+  },
+  "defaultOpenPageDescription": "打开应用时默认展示「{category}」分类",
+  "@defaultOpenPageDescription": {
+    "description": "默认打开页面说明",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "syncConfigSaved": "云同步配置已保存",
+  "@syncConfigSaved": {
+    "description": "云同步配置保存成功"
+  },
+  "syncTokenRequired": "请先输入 GitHub Token",
+  "@syncTokenRequired": {
+    "description": "请输入 GitHub Token 提示"
+  },
+  "syncConnectSuccess": "连接成功！GitHub 账号：{username}{gistInfo}",
+  "@syncConnectSuccess": {
+    "description": "云同步测试连接成功提示",
+    "placeholders": {
+      "username": {
+        "type": "String"
+      },
+      "gistInfo": {
+        "type": "String"
+      }
+    }
+  },
+  "syncConnectFailed": "测试失败：{error}",
+  "@syncConnectFailed": {
+    "description": "云同步测试连接失败提示",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "gistCreatedSuccess": "已成功在 GitHub 创建私有 Gist 并完成绑定！",
+  "@gistCreatedSuccess": {
+    "description": "自动创建 Gist 成功"
+  },
+  "gistCreateFailed": "创建 Gist 失败：{error}",
+  "@gistCreateFailed": {
+    "description": "创建 Gist 失败",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "exportSuccess": "已导出 {count} 条记录",
+  "@exportSuccess": {
+    "description": "数据导出成功提示",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "exportFailed": "导出失败：{error}",
+  "@exportFailed": {
+    "description": "数据导出失败提示",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "templateExportSuccess": "导入模板已下载保存",
+  "@templateExportSuccess": {
+    "description": "导入模板下载成功提示"
+  },
+  "templateExportFailed": "导出模板失败：{error}",
+  "@templateExportFailed": {
+    "description": "导出模板失败提示",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "importDialogTitle": "导入数据",
+  "@importDialogTitle": {
+    "description": "导入数据弹窗标题"
+  },
+  "importDialogFound": "发现 {count} 条待导入记录。",
+  "@importDialogFound": {
+    "description": "发现待导入记录条数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importDialogCurrent": "当前已有 {count} 条记录。",
+  "@importDialogCurrent": {
+    "description": "当前已有记录条数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importDialogSelectMode": "请选择导入方式：",
+  "@importDialogSelectMode": {
+    "description": "导入方式选择提示"
+  },
+  "importMerge": "合并导入",
+  "@importMerge": {
+    "description": "合并导入操作按钮"
+  },
+  "importReplace": "替换全部",
+  "@importReplace": {
+    "description": "替换全部操作按钮"
+  },
+  "importReplaceSuccess": "已替换导入 {count} 条记录",
+  "@importReplaceSuccess": {
+    "description": "替换导入成功提示",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importMergeSuccess": "已成功合并导入记录",
+  "@importMergeSuccess": {
+    "description": "合并导入成功提示"
+  },
+  "importSaveFailed": "导入保存失败",
+  "@importSaveFailed": {
+    "description": "导入保存失败提示"
+  },
+  "importFailed": "导入失败：{error}",
+  "@importFailed": {
+    "description": "导入失败提示",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "cliffTitle": "同步数据保护提醒",
+  "@cliffTitle": {
+    "description": "断崖跌落保护弹窗标题"
+  },
+  "cliffMessage": "检测到云端与本地合并后数据量骤降（原基准为 {baseline} 部，合并后仅剩 {merged} 部）。\n\n这通常发生在误清空或更换空 Gist 时。若这是您的预期删除操作，请选择「强制覆盖同步」。",
+  "@cliffMessage": {
+    "description": "断崖跌落保护弹窗正文",
+    "placeholders": {
+      "baseline": {
+        "type": "int"
+      },
+      "merged": {
+        "type": "int"
+      }
+    }
+  },
+  "cliffForceSync": "强制覆盖同步",
+  "@cliffForceSync": {
+    "description": "强制同步按钮文案"
   }
 }

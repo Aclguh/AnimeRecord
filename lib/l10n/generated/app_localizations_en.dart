@@ -365,4 +365,148 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deleteConfirmMessage =>
       'Are you sure you want to delete this anime record? It will also be deleted from the cloud upon next sync.';
+
+  @override
+  String get syncConnected => 'Connected';
+
+  @override
+  String get syncNotConfigured => 'Not Configured';
+
+  @override
+  String get copyTokenCreateLink => 'Copy Token Link ↗';
+
+  @override
+  String get tokenCopied => 'Token creation link copied to clipboard';
+
+  @override
+  String get tokenPermissionHint =>
+      'Only gist read/write permission needed, securely stored on device.';
+
+  @override
+  String get gistIdHint =>
+      'Enter the same Gist ID across multiple devices to sync progress.';
+
+  @override
+  String get autoSyncOnStartup => 'Auto sync on startup';
+
+  @override
+  String get syncSafetyHint =>
+      '🛡️ Safe: Uses timestamp-based two-way incremental merge. New devices pull first.';
+
+  @override
+  String get localDataHint =>
+      'Export local JSON file for offline backup or download template for batch import.';
+
+  @override
+  String get displaySettings => 'Display & Appearance';
+
+  @override
+  String get interfaceLanguage => 'Language';
+
+  @override
+  String get interfaceLanguageSubtitle => 'Select application display language';
+
+  @override
+  String get followSystem => 'Follow System';
+
+  @override
+  String get followScreenRotationSubtitle =>
+      'Allow app to rotate to landscape (default off)';
+
+  @override
+  String defaultOpenPageDescription(String category) {
+    return 'Default to showing \"$category\" tab on app launch';
+  }
+
+  @override
+  String get syncConfigSaved => 'Cloud sync configuration saved';
+
+  @override
+  String get syncTokenRequired => 'Please enter GitHub Token first';
+
+  @override
+  String syncConnectSuccess(String username, String gistInfo) {
+    return 'Connection successful! GitHub account: $username$gistInfo';
+  }
+
+  @override
+  String syncConnectFailed(String error) {
+    return 'Test failed: $error';
+  }
+
+  @override
+  String get gistCreatedSuccess =>
+      'Successfully created private Gist on GitHub and bound!';
+
+  @override
+  String gistCreateFailed(String error) {
+    return 'Failed to create Gist: $error';
+  }
+
+  @override
+  String exportSuccess(int count) {
+    return 'Exported $count records';
+  }
+
+  @override
+  String exportFailed(String error) {
+    return 'Export failed: $error';
+  }
+
+  @override
+  String get templateExportSuccess => 'Import template downloaded and saved';
+
+  @override
+  String templateExportFailed(String error) {
+    return 'Failed to export template: $error';
+  }
+
+  @override
+  String get importDialogTitle => 'Import Data';
+
+  @override
+  String importDialogFound(int count) {
+    return 'Found $count incoming records.';
+  }
+
+  @override
+  String importDialogCurrent(int count) {
+    return 'Currently has $count records.';
+  }
+
+  @override
+  String get importDialogSelectMode => 'Please select import mode:';
+
+  @override
+  String get importMerge => 'Merge Import';
+
+  @override
+  String get importReplace => 'Replace All';
+
+  @override
+  String importReplaceSuccess(int count) {
+    return 'Replaced and imported $count records';
+  }
+
+  @override
+  String get importMergeSuccess => 'Successfully merged and imported records';
+
+  @override
+  String get importSaveFailed => 'Import save failed';
+
+  @override
+  String importFailed(String error) {
+    return 'Import failed: $error';
+  }
+
+  @override
+  String get cliffTitle => 'Sync Data Protection Warning';
+
+  @override
+  String cliffMessage(int baseline, int merged) {
+    return 'Detected sharp decrease in records after merging (baseline: $baseline, merged: $merged).\n\nThis usually occurs when clearing or switching to an empty Gist. If this is intended, please choose \"Force Sync\".';
+  }
+
+  @override
+  String get cliffForceSync => 'Force Sync';
 }

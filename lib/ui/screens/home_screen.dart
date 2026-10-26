@@ -147,11 +147,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (res.isCliff) {
       final confirmForce = await ConfirmDialog.show(
         context,
-        title: '同步数据保护提醒',
-        message: '检测到云端与本地合并后数据量骤降（原基准为 ${res.baselineCount} 部，合并后仅剩 ${res.mergedCount} 部）。\n\n'
+        title: context.l10nOrNull?.cliffTitle ?? '同步数据保护提醒',
+        message: context.l10nOrNull?.cliffMessage(res.baselineCount, res.mergedCount) ??
+            '检测到云端与本地合并后数据量骤降（原基准为 ${res.baselineCount} 部，合并后仅剩 ${res.mergedCount} 部）。\n\n'
             '这通常发生在误清空或更换空 Gist 时。若这是您的预期删除操作，请选择「强制覆盖同步」。',
-        confirmText: '强制覆盖同步',
-        cancelText: '取消',
+        confirmText: context.l10nOrNull?.cliffForceSync ?? '强制覆盖同步',
+        cancelText: context.l10nOrNull?.cancel ?? '取消',
         isDestructive: true,
       );
 
