@@ -1,10 +1,10 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../l10n/l10n.dart';
 import '../../models/anime_record.dart';
 import '../../models/app_constants.dart';
 import '../../services/import_export_service.dart';
+import '../../state/anime_filter_controller.dart';
 import '../../state/anime_provider.dart';
 import '../../state/locale_provider.dart';
 import '../../state/theme_provider.dart';
@@ -187,31 +187,50 @@ class _HomeScreenState extends State<HomeScreen> {
               child: RefreshIndicator(
                 onRefresh: _handleSync,
                 color: Theme.of(context).colorScheme.primary,
-                child: ListenableBuilder(
-                  listenable: widget.animeProvider,
-                  builder: (context, _) {
-                    final provider = widget.animeProvider;
-                    final isDefaultSort = provider.sortBy == SortOption.defaultSort;
+                child: Container(
+                  key: _scrollAreaKey,
+                  child: Scrollbar(
+                    controller: _scrollController,
+                    thumbVisibility: true,
+                    interactive: true,
+                    child: CustomScrollView(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                      slivers: [
+                        // 1. 顶部统计栏（细粒度隔离：仅在底层仓储数据增删改时重绘，不受搜索框输入或周几切换影响）
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                          sliver: SliverToBoxAdapter(
+                            child: ListenableBuilder(
+                              listenable: widget.animeProvider.repository,
+                              builder: (context, _) {
+                                final repo = widget.animeProvider.repository;
+                                return StatsBar(
+                                  totalRecords: repo.records.length,
+                                  totalEpisodesWatched:
+                                      repo.records.fold(0, (sum, r) => sum + r.episodesWatched),
+                                  statusCounts:
+                                      AnimeFilterController.computeStatusCounts(repo.records),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
 
-                    return Container(
-                      key: _scrollAreaKey,
-                      child: Scrollbar(
-                        controller: _scrollController,
-                        thumbVisibility: true,
-                        interactive: true,
-                        child: CustomScrollView(
-                          controller: _scrollController,
-                          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                          slivers: [
-                            // 1. 顶部控制栏区域（统计栏带防抖缓存隔离、工具栏与周几过滤）
-                            SliverPadding(
-                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                              sliver: SliverToBoxAdapter(
-                                child: Column(
+                        // 2. 过滤与搜索工具栏区域
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                          sliver: SliverToBoxAdapter(
+                            child: ListenableBuilder(
+                              listenable: Listenable.merge([
+                                widget.animeProvider.filterController,
+                                widget.animeProvider.repository,
+                              ]),
+                              builder: (context, _) {
+                                final provider = widget.animeProvider;
+                                return Column(
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
-                                    _HomeScreenStatsBar(animeProvider: provider),
-                                    const SizedBox(height: 14),
                                     FilterToolbar(
                                       activeStatus: provider.activeStatus,
                                       statusCounts: provider.statusCounts,
@@ -238,57 +257,71 @@ class _HomeScreenState extends State<HomeScreen> {
                                       onSelectWeek: provider.setWeekFilter,
                                     ),
                                   ],
-                                ),
-                              ),
+                                );
+                              },
                             ),
-
-                            // 2. 番剧卡片网格列表 / 调整顺序列表 / 空状态
-                            if (provider.pagedRecords.isEmpty)
-                              SliverPadding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                sliver: SliverToBoxAdapter(
-                                  child: _buildEmptyState(context),
-                                ),
-                              )
-                            else if (_isReorderingMode && isDefaultSort)
-                              SliverPadding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                sliver: SliverToBoxAdapter(
-                                  child: _buildReorderListView(context, provider),
-                                ),
-                              )
-                            else
-                              SliverPadding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                sliver: _buildVirtualizedCardsGrid(context, provider),
-                              ),
-
-                            // 3. 加载更多与底部留白
-                            if (provider.hasMore && !_isReorderingMode)
-                              SliverToBoxAdapter(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(top: 24, bottom: 36),
-                                  child: Center(
-                                    child: OutlinedButton(
-                                      onPressed: provider.loadMore,
-                                      style: OutlinedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                      ),
-                                      child: Text(l10n?.loadMore ?? '加载更多'),
-                                    ),
-                                  ),
-                                ),
-                              )
-                            else
-                              const SliverToBoxAdapter(
-                                child: SizedBox(height: 36),
-                              ),
-                          ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
+
+                        // 3. 番剧卡片网格列表 / 调整顺序列表 / 空状态 / 分页加载
+                        ListenableBuilder(
+                          listenable: widget.animeProvider,
+                          builder: (context, _) {
+                            final provider = widget.animeProvider;
+                            final isDefaultSort = provider.sortBy == SortOption.defaultSort;
+
+                            return SliverMainAxisGroup(
+                              slivers: [
+                                if (provider.pagedRecords.isEmpty)
+                                  SliverPadding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    sliver: SliverToBoxAdapter(
+                                      child: _buildEmptyState(context),
+                                    ),
+                                  )
+                                else if (_isReorderingMode && isDefaultSort)
+                                  SliverPadding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    sliver: SliverToBoxAdapter(
+                                      child: _buildReorderListView(context, provider),
+                                    ),
+                                  )
+                                else
+                                  SliverPadding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    sliver: _buildVirtualizedCardsGrid(context, provider),
+                                  ),
+
+                                // 加载更多与底部留白
+                                if (provider.hasMore && !_isReorderingMode)
+                                  SliverToBoxAdapter(
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(top: 24, bottom: 36),
+                                      child: Center(
+                                        child: OutlinedButton(
+                                          onPressed: provider.loadMore,
+                                          style: OutlinedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 28, vertical: 12),
+                                            shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(10)),
+                                          ),
+                                          child: Text(l10n?.loadMore ?? '加载更多'),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  const SliverToBoxAdapter(
+                                    child: SizedBox(height: 36),
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -339,9 +372,9 @@ class _HomeScreenState extends State<HomeScreen> {
       actions: [
         // 云端同步按钮
         ListenableBuilder(
-          listenable: widget.animeProvider,
+          listenable: widget.animeProvider.repository,
           builder: (context, _) {
-            final isSyncing = widget.animeProvider.isSyncing;
+            final isSyncing = widget.animeProvider.repository.isSyncing;
             return OutlinedButton.icon(
               onPressed: isSyncing ? null : _handleSync,
               icon: isSyncing
@@ -573,47 +606,6 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
-  }
-}
-
-/// 具备值变化比对与 Widget 实例缓存的统计栏，避免在搜索框输入或切换周几时触发非必要重绘
-class _HomeScreenStatsBar extends StatefulWidget {
-  final AnimeProvider animeProvider;
-
-  const _HomeScreenStatsBar({required this.animeProvider});
-
-  @override
-  State<_HomeScreenStatsBar> createState() => _HomeScreenStatsBarState();
-}
-
-class _HomeScreenStatsBarState extends State<_HomeScreenStatsBar> {
-  int _lastTotal = -1;
-  int _lastEpisodes = -1;
-  Map<String, int> _lastCounts = const {};
-  Widget? _cachedWidget;
-
-  @override
-  Widget build(BuildContext context) {
-    final total = widget.animeProvider.totalRecordsCount;
-    final episodes = widget.animeProvider.totalEpisodesWatched;
-    final counts = widget.animeProvider.statusCounts;
-
-    if (_cachedWidget != null &&
-        _lastTotal == total &&
-        _lastEpisodes == episodes &&
-        mapEquals(_lastCounts, counts)) {
-      return _cachedWidget!;
-    }
-
-    _lastTotal = total;
-    _lastEpisodes = episodes;
-    _lastCounts = Map.of(counts);
-    _cachedWidget = StatsBar(
-      totalRecords: total,
-      totalEpisodesWatched: episodes,
-      statusCounts: _lastCounts,
-    );
-    return _cachedWidget!;
   }
 }
 

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'services/storage_service.dart';
 import 'state/anime_provider.dart';
+import 'state/anime_scope.dart';
 import 'state/locale_provider.dart';
 import 'state/theme_provider.dart';
 import 'ui/screens/home_screen.dart';
@@ -98,19 +99,24 @@ class _AnimeRecordAppState extends State<AnimeRecordApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: '看番记录 - Anime Record',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: widget.themeProvider.themeMode,
-      locale: _effectiveLocaleProvider.locale,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: HomeScreen(
-        animeProvider: widget.animeProvider,
-        themeProvider: widget.themeProvider,
-        localeProvider: _effectiveLocaleProvider,
+    return AnimeScope(
+      animeProvider: widget.animeProvider,
+      themeProvider: widget.themeProvider,
+      localeProvider: _effectiveLocaleProvider,
+      child: MaterialApp(
+        title: '看番记录 - Anime Record',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: widget.themeProvider.themeMode,
+        locale: _effectiveLocaleProvider.locale,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: HomeScreen(
+          animeProvider: widget.animeProvider,
+          themeProvider: widget.themeProvider,
+          localeProvider: _effectiveLocaleProvider,
+        ),
       ),
     );
   }
