@@ -22,6 +22,9 @@ class AnimeCoverImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final cleanUrl = url.trim();
     final effectiveRadius = borderRadius ?? BorderRadius.circular(8);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final placeholderBg = isDark ? const Color(0xFF1E2025) : const Color(0xFFF4F4F5);
+    final placeholderIconColor = isDark ? const Color(0xFF71717A) : const Color(0xFFA1A1AA);
 
     if (cleanUrl.isEmpty) {
       return ClipRRect(
@@ -29,12 +32,12 @@ class AnimeCoverImage extends StatelessWidget {
         child: Container(
           width: width,
           height: height,
-          color: const Color(0xFF1E2025),
-          child: const Center(
+          color: placeholderBg,
+          child: Center(
             child: Icon(
               Icons.movie_outlined,
               size: 24,
-              color: Color(0xFF71717A),
+              color: placeholderIconColor,
             ),
           ),
         ),
@@ -50,7 +53,7 @@ class AnimeCoverImage extends StatelessWidget {
       child: Container(
         width: width,
         height: height,
-        color: const Color(0xFF1E2025),
+        color: placeholderBg,
         child: CachedNetworkImage(
           imageUrl: cleanUrl,
           fit: fit,
@@ -65,11 +68,11 @@ class AnimeCoverImage extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
           ),
-          errorWidget: (context, url, error) => const Center(
+          errorWidget: (context, url, error) => Center(
             child: Icon(
               Icons.broken_image_outlined,
               size: 24,
-              color: Color(0xFF71717A),
+              color: placeholderIconColor,
             ),
           ),
         ),

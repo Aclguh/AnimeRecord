@@ -525,10 +525,13 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisCount = 2;
         }
 
+        final textScale = MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.45);
+        final cardExtent = (212.0 * textScale).roundToDouble();
+
         return SliverGrid.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            mainAxisExtent: 212,
+            mainAxisExtent: cardExtent,
             crossAxisSpacing: 14,
             mainAxisSpacing: 14,
           ),
