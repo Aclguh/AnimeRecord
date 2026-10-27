@@ -51,5 +51,27 @@ void main() {
       AppLogger.clear();
       expect(AppLogger.logHistory, isEmpty);
     });
+
+    test('sanitizes and redacts sensitive GitHub tokens in messages and errors', () {
+      const ghpToken = 'ghp_1234567890abcdefghijklmnopqrstuvwxyz';
+      const patToken = 'github_pat_1234567890abcdefghijklmnopqrstuvwxyz_0987654321';
+      const bearerHeader = 'Authorization: Bearer my_secret_token_value_xyz123';
+
+      AppLogger.info('Auth', 'User logged in with $ghpToken');
+      AppLogger.error('Auth', 'Request failed with $bearerHeader', Exception('Error with $patToken'));
+
+      final history = AppLogger.logHistory;
+      expect(history.length, 2);
+
+      expect(history[0].message, 'User logged in with [REDACTED_TOKEN]');
+      expect(history[0].message.contains(ghpToken), isFalse);
+
+      expect(history[1].message, 'Request failed with Authorization: Bearer [REDACTED_TOKEN]');
+      expect(history[1].message.contains('my_secret_token_value_xyz123'), isFalse);
+
+      final errorStr = history[1].error?.toString() ?? '';
+      expect(errorStr.contains('[REDACTED_TOKEN]'), isTrue);
+      expect(errorStr.contains(patToken), isFalse);
+    });
   });
 }

@@ -45,6 +45,19 @@ class AppLogger {
   /// 获取当前内存中保留的近期日志快照（供故障诊断或问题排查导出）
   static List<LogEntry> get logHistory => List.unmodifiable(_logBuffer);
 
+  /// 敏感信息脱敏过滤器（自动过滤 GitHub Personal Access Token 与 Authorization 请求头）
+  static String sanitize(String input) {
+    if (input.isEmpty) return input;
+    var sanitized = input;
+    sanitized = sanitized.replaceAll(RegExp(r'ghp_[a-zA-Z0-9]{20,}'), '[REDACTED_TOKEN]');
+    sanitized = sanitized.replaceAll(RegExp(r'github_pat_[a-zA-Z0-9_]{20,}'), '[REDACTED_TOKEN]');
+    sanitized = sanitized.replaceAll(
+      RegExp(r'Bearer\s+[a-zA-Z0-9_\-\.]{15,}', caseSensitive: false),
+      'Bearer [REDACTED_TOKEN]',
+    );
+    return sanitized;
+  }
+
   static void _log(
     LogLevel level,
     String tag,
@@ -52,12 +65,15 @@ class AppLogger {
     Object? error,
     StackTrace? stackTrace,
   ]) {
+    final cleanMessage = sanitize(message);
+    final cleanError = error != null ? sanitize(error.toString()) : null;
+
     final entry = LogEntry(
       timestamp: DateTime.now(),
       level: level,
       tag: tag,
-      message: message,
-      error: error,
+      message: cleanMessage,
+      error: cleanError,
       stackTrace: stackTrace,
     );
 
@@ -68,10 +84,10 @@ class AppLogger {
 
     final prefix = '[${level.label}] [$tag]';
     if (kDebugMode) {
-      if (error != null) {
-        debugPrint('$prefix $message\nError: $error${stackTrace != null ? "\n$stackTrace" : ""}');
+      if (cleanError != null) {
+        debugPrint('$prefix $cleanMessage\nError: $cleanError${stackTrace != null ? "\n$stackTrace" : ""}');
       } else {
-        debugPrint('$prefix $message');
+        debugPrint('$prefix $cleanMessage');
       }
     }
   }
