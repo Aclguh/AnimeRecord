@@ -283,6 +283,73 @@ void main() {
       );
     });
 
+    test('rejects truncated raw file exceeding 10MB limit via streaming byte count', () async {
+      final mockClient = MockClient.streaming((request, bodyStream) async {
+        if (request.url.host == 'api.github.com') {
+          final res = _jsonResponse({
+            'files': {
+              SyncService.gistDataFilename: {
+                'truncated': true,
+                'raw_url': 'https://gist.githubusercontent.com/raw/123/anime-record-data.json',
+              }
+            }
+          });
+          return http.StreamedResponse(
+            Stream.value(res.bodyBytes),
+            res.statusCode,
+            headers: res.headers,
+          );
+        } else if (request.url.host == 'gist.githubusercontent.com') {
+          // Stream 11MB of data in chunks
+          final largeChunk = List.filled(1024 * 1024, 65); // 1MB 'A'
+          return http.StreamedResponse(
+            Stream.fromIterable(List.generate(11, (_) => largeChunk)),
+            200,
+          );
+        }
+        return http.StreamedResponse(const Stream.empty(), 404);
+      });
+
+      final service = SyncService(mockClient);
+      expect(
+        () => service.fetchRemoteGist('token', '123'),
+        throwsA(isA<SyncDataFormatException>()),
+      );
+    });
+
+    test('rejects truncated raw file exceeding 10MB limit via content-length header', () async {
+      final mockClient = MockClient.streaming((request, bodyStream) async {
+        if (request.url.host == 'api.github.com') {
+          final res = _jsonResponse({
+            'files': {
+              SyncService.gistDataFilename: {
+                'truncated': true,
+                'raw_url': 'https://gist.githubusercontent.com/raw/123/anime-record-data.json',
+              }
+            }
+          });
+          return http.StreamedResponse(
+            Stream.value(res.bodyBytes),
+            res.statusCode,
+            headers: res.headers,
+          );
+        } else if (request.url.host == 'gist.githubusercontent.com') {
+          return http.StreamedResponse(
+            const Stream.empty(),
+            200,
+            contentLength: 12 * 1024 * 1024,
+          );
+        }
+        return http.StreamedResponse(const Stream.empty(), 404);
+      });
+
+      final service = SyncService(mockClient);
+      expect(
+        () => service.fetchRemoteGist('token', '123'),
+        throwsA(isA<SyncDataFormatException>()),
+      );
+    });
+
     test('throws if remote file content is invalid JSON', () async {
       final mockClient = MockClient((request) async {
         return http.Response(jsonEncode({

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '../models/anime_record.dart';
 import '../models/sync_config.dart';
@@ -97,9 +98,11 @@ class SyncService {
       throw const SyncTokenMissingException();
     }
 
-    final url = endpoint.startsWith('http')
-        ? Uri.parse(endpoint)
-        : Uri.parse('https://api.github.com$endpoint');
+    final url = endpoint.startsWith('http://')
+        ? Uri.parse(endpoint.replaceFirst('http://', 'https://'))
+        : endpoint.startsWith('https://')
+            ? Uri.parse(endpoint)
+            : Uri.parse('https://api.github.com$endpoint');
 
     final requestHeaders = {
       'Accept': 'application/vnd.github+json',
@@ -233,15 +236,25 @@ class SyncService {
           (!parsedUri.host.endsWith('githubusercontent.com') && !parsedUri.host.endsWith('github.com'))) {
         throw Exception('云端截断文件的来源地址不安全: $rawUrl');
       }
-      final rawRes = await _client.get(parsedUri);
-      if (rawRes.statusCode == 200) {
-        // 限制云端完整数据文件不超过 10MB，防止恶意伪造的大文件引发 OOM 崩溃
-        if (rawRes.bodyBytes.length > 10 * 1024 * 1024) {
+      final request = http.Request('GET', parsedUri);
+      final streamedRes = await _client.send(request);
+      if (streamedRes.statusCode == 200) {
+        const maxBytes = 10 * 1024 * 1024;
+        if (streamedRes.contentLength != null && streamedRes.contentLength! > maxBytes) {
           throw const SyncDataFormatException('云端完整数据文件超过安全体积配额 (10MB)');
         }
-        content = utf8.decode(rawRes.bodyBytes);
+        final bytesBuilder = BytesBuilder(copy: false);
+        var totalBytes = 0;
+        await for (final chunk in streamedRes.stream) {
+          totalBytes += chunk.length;
+          if (totalBytes > maxBytes) {
+            throw const SyncDataFormatException('云端完整数据文件超过安全体积配额 (10MB)');
+          }
+          bytesBuilder.add(chunk);
+        }
+        content = utf8.decode(bytesBuilder.takeBytes());
       } else {
-        throw Exception('拉取云端完整截断数据失败 (${rawRes.statusCode})');
+        throw Exception('拉取云端完整截断数据失败 (${streamedRes.statusCode})');
       }
     }
 
