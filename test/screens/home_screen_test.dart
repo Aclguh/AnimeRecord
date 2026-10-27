@@ -334,5 +334,46 @@ void main() {
       expect(find.text('周一番剧'), findsOneWidget);
       expect(find.text('周二番剧'), findsOneWidget);
     });
+
+    testWidgets('adapts grid crossAxisCount across mobile, tablet, and wide desktop breakpoints', (tester) async {
+      await animeProvider.addRecord(AnimeRecord.createEmpty().copyWith(
+        id: 'b1',
+        titleZh: '断点测试番剧 1',
+        status: AnimeStatus.watching,
+      ));
+      await animeProvider.addRecord(AnimeRecord.createEmpty().copyWith(
+        id: 'b2',
+        titleZh: '断点测试番剧 2',
+        status: AnimeStatus.watching,
+      ));
+
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      tester.view.devicePixelRatio = 1.0;
+
+      // 1. Mobile screen (< 660) -> 1 column
+      tester.view.physicalSize = const Size(500, 800);
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle();
+      var grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
+      var delegate = grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
+      expect(delegate.crossAxisCount, equals(1));
+
+      // 2. Tablet / medium screen (>= 660 and < 1050) -> 2 columns
+      tester.view.physicalSize = const Size(800, 800);
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle();
+      grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
+      delegate = grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
+      expect(delegate.crossAxisCount, equals(2));
+
+      // 3. Wide desktop (>= 1050) -> 3 columns
+      tester.view.physicalSize = const Size(1200, 800);
+      await tester.pumpWidget(createTestApp());
+      await tester.pumpAndSettle();
+      grid = tester.widget<SliverGrid>(find.byType(SliverGrid));
+      delegate = grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
+      expect(delegate.crossAxisCount, equals(3));
+    });
   });
 }

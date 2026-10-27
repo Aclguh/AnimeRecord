@@ -8,6 +8,7 @@ import 'package:anime_record/services/sync_service.dart';
 import 'package:anime_record/state/anime_provider.dart';
 import 'package:anime_record/state/locale_provider.dart';
 import 'package:anime_record/state/theme_provider.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -297,6 +298,89 @@ void main() {
       await tester.pump();
 
       // 验证防抖计时器已立即刷写落盘
+      expect(animeProvider.hasPendingSave, isFalse);
+    });
+
+    testWidgets('App flushes debounced save on lifecycle inactive', (WidgetTester tester) async {
+      final prefs = await SharedPreferences.getInstance();
+      final storage = StorageService(prefs);
+      final animeProvider = AnimeProvider(storage: storage);
+      final themeProvider = ThemeProvider(storage);
+      final localeProvider = LocaleProvider(storage);
+
+      final rec = AnimeRecord.createEmpty().copyWith(titleZh: '生命周期inactive测试');
+      await animeProvider.addRecord(rec);
+
+      await tester.pumpWidget(
+        AnimeRecordApp(
+          animeProvider: animeProvider,
+          themeProvider: themeProvider,
+          localeProvider: localeProvider,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await animeProvider.episodePlusOne(rec.id, debounce: true);
+      expect(animeProvider.hasPendingSave, isTrue);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+
+      expect(animeProvider.hasPendingSave, isFalse);
+    });
+
+    testWidgets('App flushes debounced save on lifecycle detached', (WidgetTester tester) async {
+      final prefs = await SharedPreferences.getInstance();
+      final storage = StorageService(prefs);
+      final animeProvider = AnimeProvider(storage: storage);
+      final themeProvider = ThemeProvider(storage);
+      final localeProvider = LocaleProvider(storage);
+
+      final rec = AnimeRecord.createEmpty().copyWith(titleZh: '生命周期detached测试');
+      await animeProvider.addRecord(rec);
+
+      await tester.pumpWidget(
+        AnimeRecordApp(
+          animeProvider: animeProvider,
+          themeProvider: themeProvider,
+          localeProvider: localeProvider,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await animeProvider.episodePlusOne(rec.id, debounce: true);
+      expect(animeProvider.hasPendingSave, isTrue);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.detached);
+      await tester.pump();
+
+      expect(animeProvider.hasPendingSave, isFalse);
+    });
+
+    testWidgets('App flushes debounced save and returns exit response on app exit requested', (WidgetTester tester) async {
+      final prefs = await SharedPreferences.getInstance();
+      final storage = StorageService(prefs);
+      final animeProvider = AnimeProvider(storage: storage);
+      final themeProvider = ThemeProvider(storage);
+      final localeProvider = LocaleProvider(storage);
+
+      final rec = AnimeRecord.createEmpty().copyWith(titleZh: '退出请求测试番剧');
+      await animeProvider.addRecord(rec);
+
+      await tester.pumpWidget(
+        AnimeRecordApp(
+          animeProvider: animeProvider,
+          themeProvider: themeProvider,
+          localeProvider: localeProvider,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await animeProvider.episodePlusOne(rec.id, debounce: true);
+      expect(animeProvider.hasPendingSave, isTrue);
+
+      final exitResponse = await ServicesBinding.instance.handleRequestAppExit();
+      expect(exitResponse, equals(AppExitResponse.exit));
       expect(animeProvider.hasPendingSave, isFalse);
     });
   });
