@@ -112,11 +112,7 @@ class _AnimeRecordAppState extends State<AnimeRecordApp> {
         locale: _effectiveLocaleProvider.locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: HomeScreen(
-          animeProvider: widget.animeProvider,
-          themeProvider: widget.themeProvider,
-          localeProvider: _effectiveLocaleProvider,
-        ),
+        home: const HomeScreen(),
       ),
     );
   }

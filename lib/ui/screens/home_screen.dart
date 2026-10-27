@@ -6,6 +6,7 @@ import '../../models/app_constants.dart';
 import '../../services/import_export_service.dart';
 import '../../state/anime_filter_controller.dart';
 import '../../state/anime_provider.dart';
+import '../../state/anime_scope.dart';
 import '../../state/locale_provider.dart';
 import '../../state/theme_provider.dart';
 import '../dialogs/anime_form_dialog.dart';
@@ -20,14 +21,14 @@ import '../widgets/week_filter_bar.dart';
 
 /// 主页界面（采用细粒度局部重绘隔离、Sliver 视口虚拟化网格、支持下拉刷新与响应式布局）
 class HomeScreen extends StatefulWidget {
-  final AnimeProvider animeProvider;
-  final ThemeProvider themeProvider;
+  final AnimeProvider? animeProvider;
+  final ThemeProvider? themeProvider;
   final LocaleProvider? localeProvider;
 
   const HomeScreen({
     super.key,
-    required this.animeProvider,
-    required this.themeProvider,
+    this.animeProvider,
+    this.themeProvider,
     this.localeProvider,
   });
 
@@ -42,6 +43,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _isReorderingMode = false;
 
+  AnimeProvider get _animeProvider => widget.animeProvider ?? context.animeProvider;
+  ThemeProvider get _themeProvider => widget.themeProvider ?? context.themeProvider;
+  LocaleProvider? get _localeProvider => widget.localeProvider ?? AnimeScope.maybeOf(context)?.localeProvider;
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -53,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
     AnimeFormDialog.show(
       context,
       onSave: (newRecord) async {
-        final res = await widget.animeProvider.addRecord(newRecord);
+        final res = await _animeProvider.addRecord(newRecord);
         if (mounted && res != null) {
           final title = res.titleZh.isEmpty ? (context.l10nOrNull?.unnamedAnime ?? '未命名番剧') : res.titleZh;
           Toast.show(
@@ -71,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       initialRecord: record,
       onSave: (updated) async {
-        final res = await widget.animeProvider.updateRecord(record.id, updated);
+        final res = await _animeProvider.updateRecord(record.id, updated);
         if (mounted && res != null) {
           final title = res.titleZh.isEmpty ? (context.l10nOrNull?.unnamedAnime ?? '未命名番剧') : res.titleZh;
           Toast.show(
@@ -82,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       },
       onDelete: () async {
-        final ok = await widget.animeProvider.deleteRecord(record.id);
+        final ok = await _animeProvider.deleteRecord(record.id);
         if (mounted && ok) {
           final title = record.titleZh.isEmpty ? (context.l10nOrNull?.unnamedAnime ?? '未命名番剧') : record.titleZh;
           Toast.show(
@@ -106,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (confirmed == true && mounted) {
-      final ok = await widget.animeProvider.deleteRecord(record.id);
+      final ok = await _animeProvider.deleteRecord(record.id);
       if (mounted && ok) {
         Toast.show(
           context,
@@ -118,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleEpisodePlusOne(AnimeRecord record) async {
-    final result = await widget.animeProvider.episodePlusOne(record.id);
+    final result = await _animeProvider.episodePlusOne(record.id);
     if (!mounted) return;
 
     if (result.transitionedStatus != null) {
@@ -141,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleSync() async {
-    final res = await widget.animeProvider.performSync(silent: false);
+    final res = await _animeProvider.performSync(silent: false);
     if (!mounted) return;
 
     if (res.isCliff) {
@@ -157,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       if (confirmForce == true && mounted) {
-        final forceRes = await widget.animeProvider.performSync(silent: false, force: true);
+        final forceRes = await _animeProvider.performSync(silent: false, force: true);
         if (mounted) {
           Toast.show(
             context,
@@ -177,13 +182,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _handleExportShortcut() async {
-    final jsonStr = await ImportExportService.exportToJsonAsync(widget.animeProvider.allRecords);
+    final jsonStr = await ImportExportService.exportToJsonAsync(_animeProvider.allRecords);
     final filename =
         'anime-record-backup-${DateTime.now().toIso8601String().split('T').first.replaceAll('-', '')}.json';
     final path = await ImportExportService.saveJsonFile(filename: filename, content: jsonStr);
     if (mounted && path != null) {
       final l10n = context.l10nOrNull;
-      final count = widget.animeProvider.allRecords.length;
+      final count = _animeProvider.allRecords.length;
       Toast.show(
         context,
         l10n?.exportSuccess(count) ?? '已导出 $count 条记录',
@@ -225,9 +230,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                           sliver: SliverToBoxAdapter(
                             child: ListenableBuilder(
-                              listenable: widget.animeProvider.repository,
+                              listenable: _animeProvider.repository,
                               builder: (context, _) {
-                                final repo = widget.animeProvider.repository;
+                                final repo = _animeProvider.repository;
                                 return StatsBar(
                                   totalRecords: repo.records.length,
                                   totalEpisodesWatched:
@@ -246,11 +251,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           sliver: SliverToBoxAdapter(
                             child: ListenableBuilder(
                               listenable: Listenable.merge([
-                                widget.animeProvider.filterController,
-                                widget.animeProvider.repository,
+                                _animeProvider.filterController,
+                                _animeProvider.repository,
                               ]),
                               builder: (context, _) {
-                                final provider = widget.animeProvider;
+                                final provider = _animeProvider;
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
@@ -288,9 +293,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         // 3. 番剧卡片网格列表 / 调整顺序列表 / 空状态 / 分页加载
                         ListenableBuilder(
-                          listenable: widget.animeProvider,
+                          listenable: _animeProvider,
                           builder: (context, _) {
-                            final provider = widget.animeProvider;
+                            final provider = _animeProvider;
                             final isDefaultSort = provider.sortBy == SortOption.defaultSort;
 
                             return SliverMainAxisGroup(
@@ -400,9 +405,9 @@ class _HomeScreenState extends State<HomeScreen> {
       actions: [
         // 云端同步按钮
         ListenableBuilder(
-          listenable: widget.animeProvider.repository,
+          listenable: _animeProvider.repository,
           builder: (context, _) {
-            final isSyncing = widget.animeProvider.repository.isSyncing;
+            final isSyncing = _animeProvider.repository.isSyncing;
             return OutlinedButton.icon(
               onPressed: isSyncing ? null : _handleSync,
               icon: isSyncing
@@ -425,7 +430,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // 主题切换按钮
         IconButton(
-          onPressed: () => widget.themeProvider.toggleTheme(context),
+          onPressed: () => _themeProvider.toggleTheme(context),
           tooltip: isDark
               ? (context.l10nOrNull?.switchToLightTheme ?? '切换浅色主题')
               : (context.l10nOrNull?.switchToDarkTheme ?? '切换深色主题'),
@@ -440,8 +445,8 @@ class _HomeScreenState extends State<HomeScreen> {
         IconButton(
           onPressed: () => SettingsDialog.show(
             context,
-            widget.animeProvider,
-            localeProvider: widget.localeProvider,
+            _animeProvider,
+            localeProvider: _localeProvider,
           ),
           tooltip: context.l10nOrNull?.settings ?? '打开设置',
           icon: const Icon(Icons.settings_outlined, size: 20),
@@ -454,7 +459,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isTotalEmpty = widget.animeProvider.allRecords.isEmpty;
+    final isTotalEmpty = _animeProvider.allRecords.isEmpty;
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 20),
