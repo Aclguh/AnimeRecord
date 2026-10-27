@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/anime_record.dart';
@@ -203,12 +204,28 @@ class StorageService implements IStorageService {
     return [];
   }
 
-  /// 保存所有记录（在写入新记录前自动保留多版本滚动快照与容灾备份）
+  static String _serializeJson(List<AnimeRecord> records) {
+    final jsonList = records.map((r) => r.toJson()).toList();
+    return jsonEncode(jsonList);
+  }
+
+  /// 保存所有记录（在写入新记录前自动保留多版本滚动快照与容灾备份，支持后台 Isolate 序列化与无变更跳过）
   @override
   Future<bool> saveRecords(List<AnimeRecord> records) async {
     try {
-      // 1. 若当前主存储存在有效数据，转存为容灾备份快照并轮转滚动快照
       final currentRaw = _prefs.getString(storageKey);
+
+      // 数据量较多 (>= 50 条) 时使用 compute 移出主 UI 线程，低开销时直接本线程序列化
+      final raw = records.length >= 50
+          ? await compute(_serializeJson, records)
+          : _serializeJson(records);
+
+      // 若序列化结果与当前主存储完全一致，无需重复执行多重写盘与快照轮转
+      if (currentRaw != null && currentRaw == raw) {
+        return true;
+      }
+
+      // 1. 若当前主存储存在有效数据，转存为容灾备份快照并轮转滚动快照
       if (currentRaw != null && currentRaw.trim().isNotEmpty) {
         await _prefs.setString(backupKey, currentRaw);
 
@@ -219,8 +236,6 @@ class StorageService implements IStorageService {
         await _prefs.setInt(rollingBackupIndexKey, nextSlot);
       }
 
-      final jsonList = records.map((r) => r.toJson()).toList();
-      final raw = jsonEncode(jsonList);
       await _prefs.setString(storageKey, raw);
       await _prefs.setInt(versionKey, dataVersion);
       return true;

@@ -192,5 +192,32 @@ void main() {
       expect(newStorage.loadDefaultStatus(), equals(AnimeStatus.watched));
       expect(newStorage.getTombstones().containsKey('tomb_mig_1'), isTrue);
     });
+
+    test('saveRecords efficiently serializes large datasets and skips write when unchanged', () async {
+      final prefs = await SharedPreferences.getInstance();
+      final storage = StorageService(prefs);
+
+      // 生成 60 条记录（触发 records.length >= 50 的 compute 分支）
+      final largeList = List.generate(
+        60,
+        (i) => AnimeRecord.createEmpty().copyWith(
+          id: 'rec_$i',
+          titleZh: '大批量测试番剧 $i',
+          episodesWatched: i,
+          episodesTotal: 24,
+        ),
+      );
+
+      final ok = await storage.saveRecords(largeList);
+      expect(ok, isTrue);
+
+      final loaded = storage.loadRecords();
+      expect(loaded.length, equals(60));
+      expect(loaded.first.titleZh, equals('大批量测试番剧 0'));
+
+      // 再次保存完全相同的内容，应跳过写盘直接返回 true
+      final okNoOp = await storage.saveRecords(largeList);
+      expect(okNoOp, isTrue);
+    });
   });
 }
