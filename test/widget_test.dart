@@ -138,6 +138,24 @@ void main() {
       expect(restored.episodesTotal, 0);
       expect(() => restored.tags.add('冒险'), throwsUnsupportedError);
     });
+
+    test('matchesSearch matches query across titleZh, titleJa, notes, and tags', () {
+      final record = AnimeRecord.createEmpty().copyWith(
+        titleZh: '进击的巨人',
+        titleJa: '進撃の巨人',
+        notes: '艾伦与三笠的故事',
+        tags: ['热血', '悬疑'],
+      );
+
+      expect(record.matchesSearch(''), isTrue);
+      expect(record.matchesSearch('进击'), isTrue);
+      expect(record.matchesSearch('巨人'), isTrue);
+      expect(record.matchesSearch('進撃'), isTrue);
+      expect(record.matchesSearch('艾伦'), isTrue);
+      expect(record.matchesSearch('热血'), isTrue);
+      expect(record.matchesSearch('悬疑'), isTrue);
+      expect(record.matchesSearch('无职转生'), isFalse);
+    });
   });
 
   group('StorageService & Tombstones Tests', () {

@@ -250,6 +250,18 @@ class AnimeRecord {
     return null;
   }
 
+  /// 检查是否匹配给定的搜索关键词（不区分大小写，依次短路匹配中文标题、日文标题、备注与标签）
+  bool matchesSearch(String queryLower) {
+    if (queryLower.isEmpty) return true;
+    if (titleZh.toLowerCase().contains(queryLower)) return true;
+    if (titleJa.isNotEmpty && titleJa.toLowerCase().contains(queryLower)) return true;
+    if (notes.isNotEmpty && notes.toLowerCase().contains(queryLower)) return true;
+    for (final tag in tags) {
+      if (tag.toLowerCase().contains(queryLower)) return true;
+    }
+    return false;
+  }
+
   /// 验证有效性（向后兼容），null 表示通过
   String? validate() => validateError()?.defaultMessage;
 

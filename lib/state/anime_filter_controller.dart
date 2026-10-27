@@ -84,16 +84,10 @@ class AnimeFilterController extends ChangeNotifier {
       list = list.where((r) => r.status == _activeStatus).toList();
     }
 
-    // 2. 顶部搜索匹配（支持中文标题、日文标题、备注评价、标签模糊匹配）
+    // 2. 顶部搜索匹配（支持中文标题、日文标题、备注评价、标签短路匹配）
     if (_searchQuery.trim().isNotEmpty) {
       final q = _searchQuery.trim().toLowerCase();
-      list = list.where((r) {
-        final matchZh = r.titleZh.toLowerCase().contains(q);
-        final matchJa = r.titleJa.toLowerCase().contains(q);
-        final matchNotes = r.notes.toLowerCase().contains(q);
-        final matchTags = r.tags.any((t) => t.toLowerCase().contains(q));
-        return matchZh || matchJa || matchNotes || matchTags;
-      }).toList();
+      list = list.where((r) => r.matchesSearch(q)).toList();
     }
 
     return list;
