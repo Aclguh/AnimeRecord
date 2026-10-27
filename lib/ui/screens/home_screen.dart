@@ -608,7 +608,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         final textScale = MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.45);
-        final cardExtent = (212.0 * textScale).roundToDouble();
+        final cardExtent = (226.0 * textScale).roundToDouble();
 
         return SliverGrid.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(

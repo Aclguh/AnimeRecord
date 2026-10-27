@@ -87,7 +87,7 @@ class AnimeCard extends StatelessWidget {
               )
             else
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: _buildCardContent(
                   context,
                   isDark: isDark,
@@ -152,21 +152,26 @@ class AnimeCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   // 最后修改时间
-                  if (record.formatRelativeUpdatedAt().isNotEmpty)
-                    Tooltip(
-                      message: context.l10nOrNull?.lastModified(record.formatFullUpdatedAt()) ??
-                          '最后修改：${record.formatFullUpdatedAt()}',
-                      child: Text(
-                        record.formatRelativeUpdatedAt(
-                          locale: Localizations.maybeLocaleOf(context)?.languageCode ?? 'zh',
-                        ),
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: isDark ? AppTheme.textMutedDark : AppTheme.textSubDark,
+                  if (record.formatRelativeUpdatedAt().isNotEmpty) ...[
+                    Flexible(
+                      child: Tooltip(
+                        message: context.l10nOrNull?.lastModified(record.formatFullUpdatedAt()) ??
+                            '最后修改：${record.formatFullUpdatedAt()}',
+                        child: Text(
+                          record.formatRelativeUpdatedAt(
+                            locale: Localizations.maybeLocaleOf(context)?.languageCode ?? 'zh',
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: isDark ? AppTheme.textMutedDark : AppTheme.textSubDark,
+                          ),
                         ),
                       ),
                     ),
-                  const SizedBox(width: 10),
+                    const SizedBox(width: 8),
+                  ],
                   // +1 集 按钮 / 已追完 状态
                   _buildEpisodeButton(context, isCompleted),
                 ],
