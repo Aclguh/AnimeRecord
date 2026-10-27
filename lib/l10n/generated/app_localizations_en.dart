@@ -509,4 +509,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cliffForceSync => 'Force Sync';
+
+  @override
+  String get switchToLightTheme => 'Switch to light theme';
+
+  @override
+  String get switchToDarkTheme => 'Switch to dark theme';
+
+  @override
+  String get reorderModeDone => 'Done reordering';
+
+  @override
+  String get reorderModeStart => 'Reorder';
+
+  @override
+  String airStatusBadgeTooltip(String status) {
+    return 'Air status: $status';
+  }
+
+  @override
+  String weekBadgeTooltip(String week) {
+    return 'Schedule: $week';
+  }
 }

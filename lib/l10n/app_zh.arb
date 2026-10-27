@@ -718,5 +718,39 @@
   "cliffForceSync": "强制覆盖同步",
   "@cliffForceSync": {
     "description": "强制同步按钮文案"
+  },
+  "switchToLightTheme": "切换浅色主题",
+  "@switchToLightTheme": {
+    "description": "切换浅色主题提示"
+  },
+  "switchToDarkTheme": "切换深色主题",
+  "@switchToDarkTheme": {
+    "description": "切换深色主题提示"
+  },
+  "reorderModeDone": "完成排序",
+  "@reorderModeDone": {
+    "description": "完成排序模式按钮文案"
+  },
+  "reorderModeStart": "调整顺序",
+  "@reorderModeStart": {
+    "description": "进入调整顺序模式按钮文案"
+  },
+  "airStatusBadgeTooltip": "播放状态：{status}",
+  "@airStatusBadgeTooltip": {
+    "description": "播放状态徽标悬浮提示",
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "weekBadgeTooltip": "更新频率：{week}",
+  "@weekBadgeTooltip": {
+    "description": "更新频率徽标悬浮提示",
+    "placeholders": {
+      "week": {
+        "type": "String"
+      }
+    }
   }
 }

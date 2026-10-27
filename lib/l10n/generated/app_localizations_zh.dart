@@ -499,4 +499,26 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cliffForceSync => '强制覆盖同步';
+
+  @override
+  String get switchToLightTheme => '切换浅色主题';
+
+  @override
+  String get switchToDarkTheme => '切换深色主题';
+
+  @override
+  String get reorderModeDone => '完成排序';
+
+  @override
+  String get reorderModeStart => '调整顺序';
+
+  @override
+  String airStatusBadgeTooltip(String status) {
+    return '播放状态：$status';
+  }
+
+  @override
+  String weekBadgeTooltip(String week) {
+    return '更新频率：$week';
+  }
 }

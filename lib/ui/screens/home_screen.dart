@@ -182,7 +182,13 @@ class _HomeScreenState extends State<HomeScreen> {
         'anime-record-backup-${DateTime.now().toIso8601String().split('T').first.replaceAll('-', '')}.json';
     final path = await ImportExportService.saveJsonFile(filename: filename, content: jsonStr);
     if (mounted && path != null) {
-      Toast.show(context, '已导出 ${widget.animeProvider.allRecords.length} 条记录', type: ToastType.success);
+      final l10n = context.l10nOrNull;
+      final count = widget.animeProvider.allRecords.length;
+      Toast.show(
+        context,
+        l10n?.exportSuccess(count) ?? '已导出 $count 条记录',
+        type: ToastType.success,
+      );
     }
   }
 
@@ -415,7 +421,9 @@ class _HomeScreenState extends State<HomeScreen> {
         // 主题切换按钮
         IconButton(
           onPressed: () => widget.themeProvider.toggleTheme(context),
-          tooltip: isDark ? '切换浅色主题' : '切换深色主题',
+          tooltip: isDark
+              ? (context.l10nOrNull?.switchToLightTheme ?? '切换浅色主题')
+              : (context.l10nOrNull?.switchToDarkTheme ?? '切换深色主题'),
           icon: Icon(
             isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
             size: 20,
@@ -572,7 +580,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 ),
                 subtitle: Text(
-                  '${AnimeStatus.getLabel(record.status)} · ${record.episodesWatched}/${record.episodesTotal > 0 ? record.episodesTotal : "?"} 集',
+                  '${AnimeStatus.getLabel(record.status)} · ${record.episodesWatched}/${record.episodesTotal > 0 ? record.episodesTotal : "?"} ${context.l10nOrNull?.episodes ?? "集"}',
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),

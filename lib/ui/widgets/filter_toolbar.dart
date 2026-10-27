@@ -260,7 +260,9 @@ class _FilterToolbarState extends State<FilterToolbar> {
         final showReorder = widget.onToggleReorderMode != null && widget.sortBy == SortOption.defaultSort;
         final reorderBtn = showReorder
             ? Tooltip(
-                message: widget.isReorderingMode ? '完成排序' : '调整顺序',
+                message: widget.isReorderingMode
+                    ? (l10n?.reorderModeDone ?? '完成排序')
+                    : (l10n?.reorderModeStart ?? '调整顺序'),
                 child: IconButton(
                   onPressed: widget.onToggleReorderMode,
                   style: IconButton.styleFrom(

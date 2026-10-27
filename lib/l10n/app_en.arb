@@ -146,5 +146,11 @@
   "importFailed": "Import failed: {error}",
   "cliffTitle": "Sync Data Protection Warning",
   "cliffMessage": "Detected sharp decrease in records after merging (baseline: {baseline}, merged: {merged}).\n\nThis usually occurs when clearing or switching to an empty Gist. If this is intended, please choose \"Force Sync\".",
-  "cliffForceSync": "Force Sync"
+  "cliffForceSync": "Force Sync",
+  "switchToLightTheme": "Switch to light theme",
+  "switchToDarkTheme": "Switch to dark theme",
+  "reorderModeDone": "Done reordering",
+  "reorderModeStart": "Reorder",
+  "airStatusBadgeTooltip": "Air status: {status}",
+  "weekBadgeTooltip": "Schedule: {week}"
 }

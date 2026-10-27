@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import '../../models/app_constants.dart';
 
 /// 更新日（周几）筛选栏组件
@@ -37,7 +38,7 @@ class WeekFilterBar extends StatelessWidget {
             Icon(Icons.calendar_month_outlined, size: 16, color: labelColor),
             const SizedBox(width: 6),
             Text(
-              '更新日',
+              context.l10nOrNull?.weekLabel ?? '更新日',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -48,7 +49,7 @@ class WeekFilterBar extends StatelessWidget {
             // 全部
             _buildChip(
               context,
-              label: '全部',
+              label: context.l10nOrNull?.statusAll ?? '全部',
               isSelected: activeWeek.isEmpty,
               onTap: () => onSelectWeek(''),
             ),

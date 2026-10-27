@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/l10n.dart';
 import '../../../models/app_constants.dart';
 
 /// 番剧播放状态徽标（正在更新/完结）
@@ -15,8 +16,9 @@ class AnimeAirStatusBadge extends StatelessWidget {
     final (bg, fg) = AirStatus.getColors(airStatus);
     final isFinished = airStatus == AirStatus.finished;
 
+    final label = AirStatus.getLabel(airStatus);
     return Tooltip(
-      message: '播放状态：${AirStatus.getLabel(airStatus)}',
+      message: context.l10nOrNull?.airStatusBadgeTooltip(label) ?? '播放状态：$label',
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(

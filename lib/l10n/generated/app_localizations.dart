@@ -979,6 +979,42 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'强制覆盖同步'**
   String get cliffForceSync;
+
+  /// 切换浅色主题提示
+  ///
+  /// In zh, this message translates to:
+  /// **'切换浅色主题'**
+  String get switchToLightTheme;
+
+  /// 切换深色主题提示
+  ///
+  /// In zh, this message translates to:
+  /// **'切换深色主题'**
+  String get switchToDarkTheme;
+
+  /// 完成排序模式按钮文案
+  ///
+  /// In zh, this message translates to:
+  /// **'完成排序'**
+  String get reorderModeDone;
+
+  /// 进入调整顺序模式按钮文案
+  ///
+  /// In zh, this message translates to:
+  /// **'调整顺序'**
+  String get reorderModeStart;
+
+  /// 播放状态徽标悬浮提示
+  ///
+  /// In zh, this message translates to:
+  /// **'播放状态：{status}'**
+  String airStatusBadgeTooltip(String status);
+
+  /// 更新频率徽标悬浮提示
+  ///
+  /// In zh, this message translates to:
+  /// **'更新频率：{week}'**
+  String weekBadgeTooltip(String week);
 }
 
 class _AppLocalizationsDelegate
