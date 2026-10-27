@@ -113,6 +113,31 @@ void main() {
       expect(rec1, isNot(equals(rec3)));
       expect(rec1.toString(), contains('test_id'));
     });
+
+    test('tags and episodes enforce defensive immutability and non-negative values', () {
+      final mutableTags = ['热血', '动作'];
+      final record = AnimeRecord.createEmpty().copyWith(
+        tags: mutableTags,
+        episodesWatched: -5,
+        episodesTotal: -10,
+      );
+      expect(record.episodesWatched, 0);
+      expect(record.episodesTotal, 0);
+      expect(record.tags, ['热血', '动作']);
+
+      // 验证 tags 集合不可变
+      expect(() => record.tags.add('科幻'), throwsUnsupportedError);
+
+      // 验证 fromJson 也具有不可变性和非负集数保护
+      final restored = AnimeRecord.fromJson({
+        'tags': ['奇幻'],
+        'episodesWatched': -3,
+        'episodesTotal': -8,
+      });
+      expect(restored.episodesWatched, 0);
+      expect(restored.episodesTotal, 0);
+      expect(() => restored.tags.add('冒险'), throwsUnsupportedError);
+    });
   });
 
   group('StorageService & Tombstones Tests', () {
