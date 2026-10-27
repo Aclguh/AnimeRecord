@@ -160,6 +160,22 @@ void main() {
         isNull,
       );
     });
+
+    test('static filePicker getter and setter allow controlled injection and reset', () async {
+      final fakePicker = FakeFilePickerService(
+        pickResult: '{"records": []}',
+        saveResult: '/custom/path.json',
+      );
+
+      ImportExportService.filePicker = fakePicker;
+      expect(ImportExportService.filePicker, equals(fakePicker));
+
+      final picked = await ImportExportService.pickJsonFile();
+      expect(picked, '{"records": []}');
+
+      ImportExportService.resetFilePicker();
+      expect(ImportExportService.filePicker, isA<PlatformFilePickerService>());
+    });
   });
 }
 

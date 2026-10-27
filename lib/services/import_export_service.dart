@@ -51,8 +51,18 @@ class PlatformFilePickerService implements IFilePickerService {
 
 /// 导入与导出服务
 class ImportExportService {
-  /// 全局文件选择器实例，测试时可动态替换为 Mock / Fake 实现
-  static IFilePickerService filePicker = const PlatformFilePickerService();
+  static IFilePickerService _defaultPicker = const PlatformFilePickerService();
+
+  /// 获取当前文件选择器实例
+  static IFilePickerService get filePicker => _defaultPicker;
+
+  /// 在单元测试或集成测试中注入自定义的 Mock / Fake 文件选择器
+  @visibleForTesting
+  static set filePicker(IFilePickerService picker) => _defaultPicker = picker;
+
+  /// 重置文件选择器为平台默认实现，防止测试用例之间的状态污染
+  @visibleForTesting
+  static void resetFilePicker() => _defaultPicker = const PlatformFilePickerService();
   /// 导出为 JSON 字符串
   static String exportToJson(List<AnimeRecord> records) {
     final exportObj = {
