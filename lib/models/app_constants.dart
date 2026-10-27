@@ -59,13 +59,7 @@ abstract final class AnimeStatus {
   static const String watchedValue = watched;
   static const String droppedValue = dropped;
 
-  static const List<String> allValues = [
-    wantToWatch,
-    watching,
-    watched,
-    onHold,
-    dropped,
-  ];
+  static List<String> get allValues => WatchStatus.values.map((s) => s.value).toList();
 
   static String getLabel(String status) => WatchStatus.fromValue(status).label;
 
@@ -124,7 +118,7 @@ abstract final class WeekDay {
   static const String sat = 'sat';
   static const String sun = 'sun';
 
-  static const List<String> order = [mon, tue, wed, thu, fri, sat, sun];
+  static List<String> get order => WeekDayEnum.values.map((w) => w.value).toList();
 
   static String getLabel(String? week) => WeekDayEnum.fromValue(week)?.label ?? '';
 
@@ -164,7 +158,7 @@ abstract final class AirStatus {
   static const String airing = 'airing';
   static const String finished = 'finished';
 
-  static const List<String> allValues = [airing, finished];
+  static List<String> get allValues => AirStatusEnum.values.map((a) => a.value).toList();
 
   static String getLabel(String? status) => AirStatusEnum.fromValue(status)?.label ?? '';
 
@@ -199,7 +193,7 @@ abstract final class Season {
   static const String summer = 'summer';
   static const String fall = 'fall';
 
-  static const List<String> allValues = [winter, spring, summer, fall];
+  static List<String> get allValues => SeasonEnum.values.map((s) => s.value).toList();
 
   static String getLabel(String? season) => SeasonEnum.fromValue(season)?.label ?? '';
 }
@@ -235,14 +229,9 @@ abstract final class SortOption {
   static const String titleZhDesc = 'title_zh_desc';
   static const String episodesLeft = 'episodes_left';
 
-  static const Map<String, String> labels = {
-    defaultSort: '默认排序',
-    dateAddedDesc: '最近添加',
-    dateAddedAsc: '最早添加',
-    titleZhAsc: '名称 A-Z',
-    titleZhDesc: '名称 Z-A',
-    episodesLeft: '剩余集数',
-  };
+  static Map<String, String> get labels => {
+        for (final s in SortMode.values) s.value: s.label,
+      };
 }
 
 /// 预设标签

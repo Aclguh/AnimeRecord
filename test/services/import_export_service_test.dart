@@ -65,6 +65,18 @@ void main() {
       );
     });
 
+    test('tryParseImportJson returns Success on valid input and Failure on invalid', () {
+      final validJson = ImportExportService.exportTemplateJson();
+      final successResult = ImportExportService.tryParseImportJson(validJson);
+      expect(successResult.isSuccess, isTrue);
+      expect(successResult.dataOrNull, isNotNull);
+      expect(successResult.dataOrNull!.length, equals(2));
+
+      final failResult = ImportExportService.tryParseImportJson('invalid json');
+      expect(failResult.isFailure, isTrue);
+      expect(failResult.errorOrNull, isNotNull);
+    });
+
     test('mergeImport deduplicates against existing records', () {
       final current = [
         const AnimeRecord(

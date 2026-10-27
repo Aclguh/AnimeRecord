@@ -28,6 +28,7 @@ void main() {
       expect(AnimeStatus.getOrder(AnimeStatus.watching), 1);
       expect(AnimeStatus.getColor(AnimeStatus.watching), isA<Color>());
       expect(AnimeStatus.getSoftColor(AnimeStatus.watching), isA<Color>());
+      expect(AnimeStatus.allValues, equals(WatchStatus.values.map((s) => s.value).toList()));
     });
   });
 
@@ -53,6 +54,7 @@ void main() {
       final (defaultBg, defaultFg) = WeekDay.getColors(null);
       expect(defaultBg, isA<Color>());
       expect(defaultFg, isA<Color>());
+      expect(WeekDay.order, equals(WeekDayEnum.values.map((w) => w.value).toList()));
     });
   });
 
@@ -77,6 +79,7 @@ void main() {
       final (fallbackBg, fallbackFg) = AirStatus.getColors('unknown');
       expect(fallbackBg, isA<Color>());
       expect(fallbackFg, isA<Color>());
+      expect(AirStatus.allValues, equals(AirStatusEnum.values.map((a) => a.value).toList()));
     });
   });
 
@@ -90,6 +93,7 @@ void main() {
 
       expect(Season.getLabel('winter'), '冬季');
       expect(Season.getLabel(null), '');
+      expect(Season.allValues, equals(SeasonEnum.values.map((s) => s.value).toList()));
     });
   });
 
@@ -98,6 +102,7 @@ void main() {
       expect(SortMode.fromValue(''), SortMode.defaultSort);
       expect(SortMode.fromValue('date_added_desc'), SortMode.dateAddedDesc);
       expect(SortMode.fromValue('unknown'), SortMode.defaultSort);
+      expect(SortOption.labels.length, equals(SortMode.values.length));
     });
 
     test('kPresetTags is non-empty', () {

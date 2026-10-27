@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/anime_record.dart';
 import '../models/app_constants.dart';
+import '../models/result.dart';
 import '../models/sync_config.dart';
 import 'storage_service.dart';
 import 'sync_service.dart';
@@ -332,6 +333,17 @@ class AnimeRepository extends ChangeNotifier {
 
   Future<String> testToken(String token) async {
     return await _syncService.testGitHubToken(token);
+  }
+
+  /// 采用 Result 封装的安全 Token 测试接口
+  Future<Result<String, String>> safeTestToken(String token) async {
+    try {
+      final user = await testToken(token);
+      return Success(user);
+    } catch (e) {
+      final msg = e is SyncException ? e.message : e.toString().replaceFirst('Exception: ', '');
+      return Failure(msg);
+    }
   }
 
   Future<int> checkGistCount(String token, String gistId) async {

@@ -102,5 +102,12 @@ void main() {
       expect(repository.records.length, equals(1));
       expect(repository.records.first.id, equals('3'));
     });
+
+    test('safeTestToken wraps testToken into Result Success or Failure', () async {
+      // 传入空 token 触发错误，返回 Failure
+      final failResult = await repository.safeTestToken('');
+      expect(failResult.isFailure, isTrue);
+      expect(failResult.errorOrNull, isNotNull);
+    });
   });
 }

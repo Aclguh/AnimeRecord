@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/anime_record.dart';
 import '../models/app_constants.dart';
+import '../models/result.dart';
 import '../models/sync_config.dart';
 import '../services/anime_repository.dart';
 import '../services/storage_service.dart';
@@ -149,6 +150,7 @@ class AnimeProvider extends ChangeNotifier {
       _repository.performSync(silent: silent, force: force);
 
   Future<String> testToken(String token) => _repository.testToken(token);
+  Future<Result<String, String>> safeTestToken(String token) => _repository.safeTestToken(token);
   Future<int> checkGistCount(String token, String gistId) => _repository.checkGistCount(token, gistId);
   Future<String> autoCreateGist(String token) => _repository.autoCreateGist(token);
 

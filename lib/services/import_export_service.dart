@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import '../models/anime_record.dart';
+import '../models/result.dart';
 
 /// 文件选择与保存抽象接口（便于单元测试 Mock 与跨端文件存储解耦）
 abstract interface class IFilePickerService {
@@ -159,6 +160,16 @@ class ImportExportService {
   /// 异步解析待导入的 JSON 内容（在后台 Isolate 执行，防止大文件反序列化阻塞主线程）
   static Future<List<AnimeRecord>> parseImportJsonAsync(String jsonString) {
     return compute(parseImportJson, jsonString);
+  }
+
+  /// 安全解析待导入的 JSON 字符串，返回强类型 Result 结果
+  static Result<List<AnimeRecord>, String> tryParseImportJson(String jsonString) {
+    try {
+      final records = parseImportJson(jsonString);
+      return Success(records);
+    } catch (e) {
+      return Failure(e.toString().replaceFirst('Exception: ', ''));
+    }
   }
 
   /// 合并导入（根据 titleZh 去重）
