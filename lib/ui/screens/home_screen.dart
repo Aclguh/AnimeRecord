@@ -302,13 +302,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                       child: _buildEmptyState(context),
                                     ),
                                   )
-                                else if (_isReorderingMode && isDefaultSort)
+                                else if (_isReorderingMode && isDefaultSort) ...[
+                                  SliverPadding(
+                                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                                    sliver: SliverToBoxAdapter(
+                                      child: _buildReorderHeader(context),
+                                    ),
+                                  ),
                                   SliverPadding(
                                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                                    sliver: SliverToBoxAdapter(
-                                      child: _buildReorderListView(context, provider),
-                                    ),
-                                  )
+                                    sliver: _buildSliverReorderList(context, provider),
+                                  ),
+                                ]
                                 else
                                   SliverPadding(
                                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -505,93 +510,111 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildReorderListView(BuildContext context, AnimeProvider provider) {
-    final records = provider.pagedRecords;
+  Widget _buildReorderHeader(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF222226) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark ? const Color(0xFF3F3F46) : const Color(0xFFE4E4E7),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            child: Row(
-              children: [
-                Icon(Icons.swap_vert_rounded, size: 18, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    context.l10nOrNull?.reorderTip ?? '长按并拖动右侧手柄调整番剧排序',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? const Color(0xFFF4F4F5) : const Color(0xFF18181B),
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => setState(() => _isReorderingMode = false),
-                  child: Text(context.l10nOrNull?.done ?? '完成'),
-                ),
-              ],
+          Icon(Icons.swap_vert_rounded, size: 18, color: theme.colorScheme.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              context.l10nOrNull?.reorderTip ?? '长按并拖动右侧手柄调整番剧排序',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isDark ? const Color(0xFFF4F4F5) : const Color(0xFF18181B),
+              ),
             ),
           ),
-          const Divider(height: 1),
-          ReorderableListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: records.length,
-            onReorderItem: (oldIndex, newIndex) {
-              final targetIndex = oldIndex < newIndex ? newIndex + 1 : newIndex;
-              provider.reorder(oldIndex, targetIndex);
-            },
-            itemBuilder: (context, index) {
-              final record = records[index];
-              return ListTile(
-                key: ValueKey(record.id),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                leading: record.coverUrl.trim().isNotEmpty
-                    ? AnimeCoverImage(url: record.coverUrl.trim(), width: 40, height: 40)
-                    : Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF27272A) : const Color(0xFFF4F4F5),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Icon(
-                          Icons.movie_outlined,
-                          size: 20,
-                          color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
-                        ),
-                      ),
-                title: Text(
-                  record.titleZh.isEmpty ? (context.l10nOrNull?.unnamedAnime ?? '未命名番剧') : record.titleZh,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                ),
-                subtitle: Text(
-                  '${AnimeStatus.getLabel(record.status)} · ${record.episodesWatched}/${record.episodesTotal > 0 ? record.episodesTotal : "?"} ${context.l10nOrNull?.episodes ?? "集"}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
-                  ),
-                ),
-                trailing: const Icon(Icons.drag_handle_rounded, color: Colors.grey),
-              );
-            },
+          TextButton(
+            onPressed: () => setState(() => _isReorderingMode = false),
+            child: Text(context.l10nOrNull?.done ?? '完成'),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSliverReorderList(BuildContext context, AnimeProvider provider) {
+    final records = provider.pagedRecords;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return SliverReorderableList(
+      itemCount: records.length,
+      onReorderItem: (oldIndex, newIndex) {
+        final targetIndex = oldIndex < newIndex ? newIndex + 1 : newIndex;
+        provider.reorder(oldIndex, targetIndex);
+      },
+      itemBuilder: (context, index) {
+        final record = records[index];
+        return ReorderableDelayedDragStartListener(
+          key: ValueKey(record.id),
+          index: index,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF222226) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? const Color(0xFF3F3F46) : const Color(0xFFE4E4E7),
+              ),
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+              leading: record.coverUrl.trim().isNotEmpty
+                  ? AnimeCoverImage(url: record.coverUrl.trim(), width: 40, height: 40)
+                  : Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF27272A) : const Color(0xFFF4F4F5),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        Icons.movie_outlined,
+                        size: 20,
+                        color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
+                      ),
+                    ),
+              title: Text(
+                record.titleZh.isEmpty ? (context.l10nOrNull?.unnamedAnime ?? '未命名番剧') : record.titleZh,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              subtitle: Text(
+                '${AnimeStatus.getLabel(record.status)} · ${record.episodesWatched}/${record.episodesTotal > 0 ? record.episodesTotal : "?"} ${context.l10nOrNull?.episodes ?? "集"}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF71717A),
+                ),
+              ),
+              trailing: ReorderableDragStartListener(
+                index: index,
+                child: const MouseRegion(
+                  cursor: SystemMouseCursors.grab,
+                  child: Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Icon(Icons.drag_handle_rounded, color: Colors.grey),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

@@ -145,14 +145,14 @@ void main() {
 
       // 验证重排视图与提示出现
       expect(find.text('长按并拖动右侧手柄调整番剧排序'), findsOneWidget);
-      expect(find.byType(ReorderableListView), findsOneWidget);
+      expect(find.byType(SliverReorderableList), findsOneWidget);
 
       // 点击完成退出排序模式
       await tester.tap(find.text('完成'));
       await tester.pumpAndSettle();
 
       // 退出排序模式，还原为网格视图
-      expect(find.byType(ReorderableListView), findsNothing);
+      expect(find.byType(SliverReorderableList), findsNothing);
     });
 
     testWidgets('triggers export shortcut on Ctrl+S', (tester) async {
