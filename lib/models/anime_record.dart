@@ -4,6 +4,20 @@ import 'app_constants.dart';
 
 const _uuid = Uuid();
 
+/// 番剧数据校验失败原因枚举（领域层错误类型，解耦具体 UI 显示语言）
+enum AnimeValidationError {
+  emptyTitle('请输入番剧名称'),
+  invalidRating('评分应在 0-10 之间'),
+  negativeEpisodes('集数不能为负数'),
+  invalidWeek('更新频率取值无效'),
+  invalidAirStatus('播放状态取值无效'),
+  invalidCoverUrl('封面链接必须是以 http:// 或 https:// 开头的有效网址'),
+  episodesExceeded('已看集数不能超过总集数');
+
+  final String defaultMessage;
+  const AnimeValidationError(this.defaultMessage);
+}
+
 /// 单条看番记录
 class AnimeRecord {
   final String id;
@@ -207,34 +221,37 @@ class AnimeRecord {
     };
   }
 
-  /// 验证有效性，null 表示通过
-  String? validate() {
+  /// 强类型领域验证方法，返回具体的验证失败原因枚举，null 表示通过
+  AnimeValidationError? validateError() {
     if (titleZh.trim().isEmpty) {
-      return '请输入番剧名称';
+      return AnimeValidationError.emptyTitle;
     }
     if (rating < 0 || rating > 10) {
-      return '评分应在 0-10 之间';
+      return AnimeValidationError.invalidRating;
     }
     if (episodesWatched < 0 || episodesTotal < 0) {
-      return '集数不能为负数';
+      return AnimeValidationError.negativeEpisodes;
     }
     if (week.isNotEmpty && !WeekDay.order.contains(week)) {
-      return '更新频率取值无效';
+      return AnimeValidationError.invalidWeek;
     }
     if (airStatus.isNotEmpty && !AirStatus.allValues.contains(airStatus)) {
-      return '播放状态取值无效';
+      return AnimeValidationError.invalidAirStatus;
     }
     if (coverUrl.trim().isNotEmpty) {
       final uri = Uri.tryParse(coverUrl.trim());
       if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https') || uri.host.isEmpty) {
-        return '封面链接必须是以 http:// 或 https:// 开头的有效网址';
+        return AnimeValidationError.invalidCoverUrl;
       }
     }
     if (episodesTotal > 0 && episodesWatched > episodesTotal) {
-      return '已看集数不能超过总集数';
+      return AnimeValidationError.episodesExceeded;
     }
     return null;
   }
+
+  /// 验证有效性（向后兼容），null 表示通过
+  String? validate() => validateError()?.defaultMessage;
 
   /// 相对修改时间文本描述（支持根据当前语言代码格式化输出）
   String formatRelativeUpdatedAt({String locale = 'zh'}) {

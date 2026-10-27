@@ -146,9 +146,13 @@ class _AnimeFormDialogState extends State<AnimeFormDialog> {
       endDate: endDate,
     );
 
-    final validationError = newOrUpdated.validate();
+    final validationError = newOrUpdated.validateError();
     if (validationError != null) {
-      Toast.show(context, validationError, type: ToastType.error);
+      Toast.show(
+        context,
+        validationError.localizedMessage(context.l10nOrNull),
+        type: ToastType.error,
+      );
       return;
     }
 
